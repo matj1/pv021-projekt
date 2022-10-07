@@ -1,0 +1,6 @@
+*
+!/.gitignore
+!/evaluator/
+!/src/
+!/README.md
+!/run.sh
