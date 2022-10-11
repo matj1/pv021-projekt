@@ -8,6 +8,8 @@
 #define RYCHLOST 2
 #define DELKA_UCENI 5000
 
+// za sebe mluvící různé pokusné aktivační funkce
+
 double sigmoida(double x) { return 1 / (1 + exp(-x)); }
 
 double der_sigmoida(double x) { return sigmoida(x) * (1 - sigmoida(x)); }
@@ -56,6 +58,14 @@ double der_kvadrát(double x) {
 	}
 	return x;
 }
+
+/*
+iterace provede jeden průchod neuronovou sítí a vrátí číslo uhodnuté kategotie
+double ***vaha - vaha[i][j][k] váha spoje mezi neuronem ve vrstvě i indexu j a neuronem ve vrstvě
+i+1 a indexem k double **vysledky vysledky[0] je 784 vstupů +1 threshold, jinak není třeba
+inicializace double **neu neinicializované pole pro všechny neurony mimo thresholdy int vrstvy počet
+skrytých vrstev int *pocty počet neuronů v každé vrstvě bez thresholdů
+*/
 
 int iterace(double ***vaha, double **vysledky, double **neu, int vrstvy, int *pocty) {
 	for (int i = 0; i < vrstvy + 1; ++i) { // vrstev je vrstvy +2, ale poslední je výstupní
@@ -145,7 +155,8 @@ int main(int argc, char **argv) {
 		double vrstva[pocty[j]][pocty[j + 1]];
 		for (int k = 0; k < pocty[j] + 1; ++k) {
 			for (int g = 0; g < pocty[j + 1]; ++g) {
-				vrstva[k][g] = 2 * (double)rand() / (double)RAND_MAX - 1; //inicializace vah mezi -1 a 1
+				vrstva[k][g] = 2 * (double)rand() / (double)RAND_MAX -
+				               1; // inicializace vah mezi -1 a 1
 			}
 		}
 		vaha[j] = vrstva;
@@ -160,7 +171,7 @@ int main(int argc, char **argv) {
 
 	for (int j = 1; j < vrstvy + 2; ++j) {
 		double neurony[pocty[j]];
-		double vysledek[pocty[j]];
+		double vysledek[pocty[j] + 1];
 		double der[pocty[j]];
 		// memset(neurony, 0, pocty[j]); //není třeba
 		neu[j] = neurony; // neu[j-1] není potřeba sumovat vstupní vrstvu
