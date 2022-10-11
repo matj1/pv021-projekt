@@ -1,0 +1,8 @@
+AlignAfterOpenBracket: BlockIndent
+ColumnLimit: 100
+UseTab: ForIndentation
+TabWidth: 6
+IndentWidth: 6
+ContinuationIndentWidth: 6
+IndentCaseLabels: false
+BreakBeforeBraces: Attach

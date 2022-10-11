@@ -4,3 +4,5 @@
 !/src/
 !/README.md
 !/run.sh
+!/CMakeLists.txt
+!/.clang-format
