@@ -2,6 +2,7 @@
 !/.gitignore
 !/evaluator/
 !/src/
+!/src/**
 !/README.md
 !/run.sh
 !/CMakeLists.txt
