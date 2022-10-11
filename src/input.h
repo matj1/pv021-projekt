@@ -25,7 +25,7 @@ typedef struct {
  */
 pole_t načíst_data(FILE *soubor);
 
-int *načíst_cíle(FILE *soubor, int délka);
+int *načíst_cíle(FILE *soubor, int počet_řádků);
 
 /**
  * Toto přečte daný soubor a vrátí počet řádků v něm.
