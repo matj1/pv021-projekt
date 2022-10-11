@@ -1,6 +1,8 @@
+#include "input.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+
 #define VSTUPU 784
 #define VYSTUPU 10
 #define NEU 10
@@ -10,46 +12,46 @@
 
 // za sebe mluvící různé pokusné aktivační funkce, požije se nejspíš RELU
 
-double sigmoida(double x) { return 1 / (1 + exp(-x)); }
+float sigmoida(float x) { return 1 / (1 + exp(-x)); }
 
-double der_sigmoida(double x) { return sigmoida(x) * (1 - sigmoida(x)); }
+float der_sigmoida(float x) { return sigmoida(x) * (1 - sigmoida(x)); }
 
-double relu(double x) {
+float relu(float x) {
 	if (x > 0) {
 		return x;
 	}
 	return 0; // SKLON * x;
 }
 
-double der_relu(double x) {
+float der_relu(float x) {
 	if (x > 0) {
 		return 1;
 	}
 	return SKLON; // 0;
 }
 
-double logaritmická(double x) {
+float logaritmická(float x) {
 	if (x > 0) {
 		return log(x + 1);
 	}
 	return 0; // SKLON * x;
 }
 
-double der_logaritmická(double x) {
+float der_logaritmická(float x) {
 	if (x > 0) {
 		return 1 / (x + 1);
 	}
 	return SKLON; // 0;
 }
 
-double kvadrát(double x) {
+float kvadrát(float x) {
 	if (x > -1 && x < 1) {
 		return x * x - 1;
 	}
 	return 0;
 }
 
-double der_kvadrát(double x) {
+float der_kvadrát(float x) {
 	if (x < -1) {
 		return SKLON; // 0;
 	}
@@ -62,19 +64,19 @@ double der_kvadrát(double x) {
 /*
 iterace provede jeden průchod neuronovou sítí a vrátí číslo uhodnuté kategotie
 
-double ***vaha - vaha[i][j][k] váha spoje mezi neuronem ve vrstvě i indexu j a neuronem ve vrstvě
-i+1 a indexem k 
+float ***vaha - vaha[i][j][k] váha spoje mezi neuronem ve vrstvě i indexu j a neuronem ve vrstvě
+i+1 a indexem k
 
-double **vysledky vysledky[0] je 784 vstupů +1 threshold, jinak není třeba
+float **vysledky vysledky[0] je 784 vstupů +1 threshold, jinak není třeba
 inicializace
 
-double **neu neinicializované pole pro všechny neurony mimo thresholdy int vrstvy počet
+float **neu neinicializované pole pro všechny neurony mimo thresholdy int vrstvy počet
 skrytých vrstev
 
 int *pocty počet neuronů v každé vrstvě bez thresholdů
 */
 
-int iterace(double ***vaha, double **vysledky, double **neu, int vrstvy, int *pocty) {
+int iterace(float ***vaha, float **vysledky, float **neu, int vrstvy, int *pocty) {
 	for (int i = 0; i < vrstvy + 1; ++i) { // vrstev je vrstvy +2, ale poslední je výstupní
 		vysledky[i][pocty[i]] = 1;       // nastavení thresholdového neuronu
 		for (int k = 0; k < pocty[i + 1]; ++k) {       // pro každý neuron vyšší vrstvy
@@ -98,7 +100,7 @@ int iterace(double ***vaha, double **vysledky, double **neu, int vrstvy, int *po
 		      max = i;
 		}*/
 	}
-	double suma = 0;
+	float suma = 0;
 	for (int i = 0; i < VYSTUPU; ++i) {
 		suma += exp(neu[vrstvy + 1][i]); //- neu[vrstvy+1][max]);
 	}
@@ -109,8 +111,8 @@ int iterace(double ***vaha, double **vysledky, double **neu, int vrstvy, int *po
 	return max;
 }
 
-int trenink(double ***vaha, double **neu, double **vysledky, double **derivace, int vrstvy,
-            int *pocty, int cil) {
+int trenink(float ***vaha, float **neu, float **vysledky, float **derivace, int vrstvy, int *pocty,
+            int cil) {
 	int vysledek = iterace(vaha, vysledky, neu, vrstvy, pocty);
 
 	for (int i = 0; i < VYSTUPU; ++i) {
@@ -156,30 +158,30 @@ int main(int argc, char **argv) {
 		                              // deklaroval, ze bude zadavat)
 	}
 
-	double **vaha[vrstvy + 1];
+	float **vaha[vrstvy + 1];
 	srand(0);
 	for (int j = 0; j < vrstvy + 1; ++j) {
-		double vrstva[pocty[j]][pocty[j + 1]];
+		float vrstva[pocty[j]][pocty[j + 1]];
 		for (int k = 0; k < pocty[j] + 1; ++k) {
 			for (int g = 0; g < pocty[j + 1]; ++g) {
-				vrstva[k][g] = 2 * (double)rand() / (double)RAND_MAX -
+				vrstva[k][g] = 2 * (float)rand() / (float)RAND_MAX -
 				               1; // inicializace vah mezi -1 a 1
 			}
 		}
 		vaha[j] = vrstva;
 	}
 
-	double *neu[vrstvy + 2]; // neu[0] ale nepoužívám (přehlednost ?)
-	double *vysledky[vrstvy + 2];
-	double *derivace[vrstvy + 2]; // derivace[0] taky nepoužívám
+	float *neu[vrstvy + 2]; // neu[0] ale nepoužívám (přehlednost ?)
+	float *vysledky[vrstvy + 2];
+	float *derivace[vrstvy + 2]; // derivace[0] taky nepoužívám
 
-	// neu[0]= double neurony[VSTUPU];
-	// vysledky[0] = double vysledek[VSTUPU];
+	// neu[0]= float neurony[VSTUPU];
+	// vysledky[0] = float vysledek[VSTUPU];
 
 	for (int j = 1; j < vrstvy + 2; ++j) {
-		double neurony[pocty[j]];
-		double vysledek[pocty[j] + 1];
-		double der[pocty[j]];
+		float neurony[pocty[j]];
+		float vysledek[pocty[j] + 1];
+		float der[pocty[j]];
 		// memset(neurony, 0, pocty[j]); //není třeba
 		neu[j] = neurony; // neu[j-1] není potřeba sumovat vstupní vrstvu
 		vysledky[j] = vysledek;
@@ -196,12 +198,14 @@ int main(int argc, char **argv) {
 	// TODO pořešit cesty k datům
 	FILE *vstup = fopen("../data/pv021_project/data/fashion_mnist_train_vectors.csv", "r");
 	FILE *výstupy = fopen("../data/pv021_project/data/fashion_mnist_train_labels.csv", "r");
-	double **data = načíst_data(vstup);
-	int *cíle = načíst_cíle(výstupy);
+	pole_t vektory = načíst_data(vstup);
+	float *data = vektory.data;
+	int délka = vektory.velikost;
+	int *cíle = načíst_cíle(výstupy, délka);
 	int správně = 0;
 	for (int p = 0; p < DELKA_UCENI; ++p) {
-		for (int i = 0; i < 60000; ++i) {
-			vysledky[0] = data[i];
+		for (int i = 0; i < délka; ++i) {
+			vysledky[0] = &data[i * 785];
 			správně += trenink(vaha, neu, vysledky, derivace, vrstvy, pocty, cíle[i]);
 		}
 		printf("%d\n", správně);

@@ -2,13 +2,13 @@
 // Created by matj1 on 11.10.22.
 //
 
-#include <string.h>
+#include "input.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "input.h"
+#include <string.h>
 
-#define VELIKOST_BUFFERU (1<<16)
-#define VELIKOST_OBRÁZKU (28*28)
+#define VELIKOST_BUFFERU (1 << 16)
+#define VELIKOST_OBRÁZKU (28 * 28)
 
 /**
  * Toto bere deskriptor souboru se vstupními daty a vrací pole vstupních obrázků.
@@ -17,14 +17,14 @@
  * @param soubor ukazatel na soubor budoucí čteným
  * @return pole zpracovaných vstupních dat; každý prvek je jeden obrázek a má VELIKOST_OBRÁZKU prvků
  */
-pole_t načíst_data(FILE* soubor) {
+pole_t načíst_data(FILE *soubor) {
 	size_t počet_řádků = sečti_řádky(soubor);
 	char buffer[VELIKOST_BUFFERU] = {0};
-	float* data = malloc(počet_řádků * VELIKOST_OBRÁZKU * sizeof(float));
+	float *data = malloc(počet_řádků * (VELIKOST_OBRÁZKU + 1) * sizeof(float));
 
 	size_t byty_přečteny;
-	size_t délka_řádku;
-	char* řádek = malloc(délka_řádku);
+	size_t délka_řádku = VELIKOST_OBRÁZKU * 4;
+	char *řádek = malloc(délka_řádku);
 
 	// hlavní smyčka načítání dat
 	size_t počet_přečtených_řádků = 0;
@@ -32,14 +32,15 @@ pole_t načíst_data(FILE* soubor) {
 		getline(&řádek, &délka_řádku, soubor);
 
 		size_t počet_přečtených_čísel = 0;
-		char* číslo = řádek;
+		char *číslo = řádek;
 		while (1) {
 			číslo = strtok(číslo, ",");
 			if (číslo == NULL) {
 				break;
 			}
 
-			data[počet_přečtených_řádků*délka_řádku + počet_přečtených_čísel] = atof(číslo);
+			data[počet_přečtených_řádků * (délka_řádku + 1) + počet_přečtených_čísel] =
+			      atof(číslo);
 			počet_přečtených_čísel++;
 		}
 
@@ -50,13 +51,41 @@ pole_t načíst_data(FILE* soubor) {
 }
 
 /**
+ * načte cíle :D
+ *
+ *
+ *
+ *
+ *
+ */
+int *načíst_cíle(FILE *soubor, int počet_řádků) {
+	char buffer[VELIKOST_BUFFERU] = {0};
+	int *data = malloc(počet_řádků * sizeof(int));
+
+	size_t byty_přečteny;
+	size_t délka_řádku = 2;
+	char *řádek = malloc(délka_řádku);
+
+	// hlavní smyčka načítání dat
+	size_t počet_přečtených_řádků = 0;
+	for (int i = 0; i < počet_řádků; ++i) {
+		getline(&řádek, &délka_řádku, soubor);
+		data[počet_přečtených_řádků] = atof(řádek[0]);
+
+		počet_přečtených_řádků++;
+	}
+
+	return data;
+}
+
+/**
  * Toto přečte daný soubor a vrátí počet řádků v něm.
  * Toto vrátí ukazatel pozice v tom souboru na začátek.
  *
  * @param soubor
  * @return počet řádků
  */
-size_t sečti_řádky(FILE* soubor) {
+size_t sečti_řádky(FILE *soubor) {
 	char buffer[VELIKOST_BUFFERU] = {0};
 	size_t počet_řádků = 0;
 	size_t byty_přečteny;
@@ -76,10 +105,10 @@ size_t sečti_řádky(FILE* soubor) {
 	}
 
 	rewind(soubor);
-	return  počet_řádků;
+	return počet_řádků;
 }
 
-
+/*
 void bin_parsuj_vstupy(float *vstup, FILE *odkud, char **buff) {
   for (int i = 1; i < VSTUPU; ++i) {
     vstup[i - 1] = vstup[i];
@@ -122,3 +151,4 @@ void import_koef(int vrstev, int *pocty, double ***vaha, FILE *odkud) {
   free(*buff);
   return;
 }
+*/
