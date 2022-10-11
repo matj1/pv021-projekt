@@ -1,4 +1,3 @@
-AlignAfterOpenBracket: BlockIndent
 ColumnLimit: 100
 UseTab: ForIndentation
 TabWidth: 6
