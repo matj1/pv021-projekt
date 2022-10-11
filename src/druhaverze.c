@@ -6,6 +6,7 @@
 #define NEU 10
 #define SKLON 0.05
 #define RYCHLOST 2
+#define DELKA_UCENI 5000
 
 double sigmoida(double x) { return 1 / (1 + exp(-x)); }
 
@@ -25,98 +26,104 @@ double der_relu(double x) {
 	return SKLON; // 0;
 }
 
-double aktivacni(double x) {
+double logaritmická(double x) {
 	if (x > 0) {
 		return log(x + 1);
 	}
 	return 0; // SKLON * x;
 }
 
-double der_aktivacni(double x) {
+double der_logaritmická(double x) {
 	if (x > 0) {
 		return 1 / (x + 1);
 	}
 	return SKLON; // 0;
 }
 
-double aktivacni_kv(double x) {
+double kvadrát(double x) {
 	if (x > -1 && x < 1) {
 		return x * x - 1;
 	}
 	return 0;
 }
 
-double der_aktivacni_kv(double x) {
+double der_kvadrát(double x) {
 	if (x < -1) {
 		return SKLON; // 0;
 	}
 	if (x > 1) {
 		return -SKLON; // 0;
 	}
-	return x
+	return x;
 }
 
-double iterace(double ***vaha, double **vysledky, double **neu, int vrstvy, int *pocty) {
-	for (int i = 0; i < vrstvy; ++i) {
-		vysledky[i][pocty[i]] = 1;
-		for (int k = 0; k < pocty[i + 1]) {
-			neu[i + 1][k] = 0;
-			for (int j = 0; j < pocty[i] + 1; ++j) {
+int iterace(double ***vaha, double **vysledky, double **neu, int vrstvy, int *pocty) {
+	for (int i = 0; i < vrstvy + 1; ++i) { // vrstev je vrstvy +2, ale poslední je výstupní
+		vysledky[i][pocty[i]] = 1;       // nastavení thresholdového neuronu
+		for (int k = 0; k < pocty[i + 1]; ++k) {       // pro každý neuron vyšší vrstvy
+			neu[i + 1][k] = 0;                       // vynulování na začátku sumování
+			for (int j = 0; j < pocty[i] + 1; ++j) { // +1 aby se počítalo i s thresholdem
 				neu[i + 1][k] += vysledky[i][j] * vaha[i][j][k];
 			}
-			vysledky[i + 1][k] = aktivacni(neu[i + 1][k]); // otazka vice aktivacnich funkci
+			vysledky[i + 1][k] = relu(neu[i + 1][k]); // otazka vice aktivacnich funkci
 		}
 	}
-	double max = 0;
+
+	//řešení výstupní vrstvy
+	int max = 0;
 	for (int i = 0; i < VYSTUPU; ++i) {
 		neu[vrstvy + 1][i] = 0;
-		for (int j = 0; j < pocty[vrstvy]; ++j) {
+		vysledky[vrstvy][pocty[vrstvy]] = 1; // nastavení thresholdu
+		for (int j = 0; j < pocty[vrstvy] + 1; ++j) {
 			neu[vrstvy + 1][i] += vysledky[vrstvy][j] * vaha[vrstvy][j][i];
 		}
-		if (neu[vrstvy + 1][i] > max) {
-			max = neu[vrstvy + 1][i];
-		}
+		/*if (neu[vrstvy + 1][i] > neu[vrstvy+1][max]) {
+		      max = i;
+		}*/
 	}
 	double suma = 0;
 	for (int i = 0; i < VYSTUPU; ++i) {
-		suma += exp(neu[vrstvy + 1][i] - max);
+		suma += exp(neu[vrstvy + 1][i]); //- neu[vrstvy+1][max]);
 	}
 	for (int i = 0; i < VYSTUPU; ++i) {
-		vysledky[vrstvy + 1][i] = exp(neu[vrstvy + 1][i] - max) / suma;
+		vysledky[vrstvy + 1][i] = exp(neu[vrstvy + 1][i]) / suma; // - max) / suma;
 	}
 
-	return 0;
+	return max;
 }
 
 int trenink(double ***vaha, double **neu, double **vysledky, double **derivace, int vrstvy,
             int *pocty, int cil) {
-	iterace(vaha, vysledky, neu, vrstvy, pocty);
+	int vysledek = iterace(vaha, vysledky, neu, vrstvy, pocty);
 
 	for (int i = 0; i < VYSTUPU; ++i) {
 		if (i != cil) {
-			derivace[vrstvy + 1][i] = vysledky[vrstvy + 1][i]; // anebo +=
+			derivace[vrstvy + 1][i] =
+			      vysledky[vrstvy + 1]
+			              [i]; // anebo += , příprava na přístup několik příkladů: jedno učení
 		}
 	}
 	derivace[vrstvy + 1][cil] = 1 - vysledky[vrstvy + 1][cil]; // taky nebo +=
 
-	for (int i = vrstvy; i > 0, --i) {
+	for (int i = vrstvy; i > 0; --i) {
 		for (int j = 0; j < pocty[i]; ++j) {
-			derivace[i][j] = 0; // presunout do main ?
+			derivace[i][j] = 0; // přesunout do nadřazené funkce ?
 			for (int k = 0; k < pocty[i + 1]; ++k) {
-				derivace[i][j] +=
-				      vaha[i][j][k] * der_aktivacni(neu[i][j]) * derivace[i + 1][k];
+				derivace[i][j] += vaha[i][j][k] * der_relu(neu[i][j]) * derivace[i + 1][k];
 			}
 		}
 	}
 
-	for (int i = 0; i < vrstvy + 1) { // +2 ?
-		for (int j = 0; j < pocty[i] + 1) {
-			for (int k = 0; k < pocty[i + 1]) {
-				vaha[i][j][k] -= (derivace[i][k] * vysledky[i][j] - cil) * RYCHLOST;
+	for (int i = 0; i < vrstvy + 1; ++i) {
+		for (int j = 0; j < pocty[i] + 1; ++j) {
+			for (int k = 0; k < pocty[i + 1]; ++k) {
+				vaha[i][j][k] -= derivace[i][k] * vysledky[i][j] *
+				                 RYCHLOST; // RYCHLOST jako funkce něčeho ?
 			}
 		}
 	}
-	return 0; // vysledek - cil < 0.5;
+	return vysledek == cil; // můžeme potom sečíst výsledky tréninku pro celkový počet správně
+	                        // odhadnutých číslic
 }
 
 int main(int argc, char **argv) {
@@ -133,25 +140,30 @@ int main(int argc, char **argv) {
 	}
 
 	double **vaha[vrstvy + 1];
-
+	srand(0);
 	for (int j = 0; j < vrstvy + 1; ++j) {
 		double vrstva[pocty[j]][pocty[j + 1]];
+		for (int k = 0; k < pocty[j] + 1; ++k) {
+			for (int g = 0; g < pocty[j + 1]; ++g) {
+				vrstva[k][g] = 2 * (double)rand() / (double)RAND_MAX - 1; //inicializace vah mezi -1 a 1
+			}
+		}
 		vaha[j] = vrstva;
 	}
 
-	double *neu[vrstvy + 2];
+	double *neu[vrstvy + 2]; // neu[0] ale nepoužívám (přehlednost ?)
 	double *vysledky[vrstvy + 2];
-	double *derivace[vrstvy + 2];
+	double *derivace[vrstvy + 2]; // derivace[0] taky nepoužívám
 
 	// neu[0]= double neurony[VSTUPU];
-	vysledky[0] = double vysledek[VSTUPU];
+	// vysledky[0] = double vysledek[VSTUPU];
 
 	for (int j = 1; j < vrstvy + 2; ++j) {
 		double neurony[pocty[j]];
 		double vysledek[pocty[j]];
 		double der[pocty[j]];
-		// memset(neurony, 0, pocty[j]);
-		neu[j] = neurony;
+		// memset(neurony, 0, pocty[j]); //není třeba
+		neu[j] = neurony; // neu[j-1] není potřeba sumovat vstupní vrstvu
 		vysledky[j] = vysledek;
 		derivace[j] = der; // nebo der[j-1] nepouzivam derivaci prvni vstupni vrstvy
 	}
@@ -163,58 +175,18 @@ int main(int argc, char **argv) {
 	}
 	*/
 
-	char načíst[784 * 4];
+	// TODO pořešit cesty k datům
 	FILE *vstup = fopen("../data/pv021_project/data/fashion_mnist_train_vectors.csv", "r");
-	for (int i = 0; i < 60000; ++i) {
-		getline(načíst, )
+	FILE *výstupy = fopen("../data/pv021_project/data/fashion_mnist_train_labels.csv", "r");
+	double **data = načíst_data(vstup);
+	int *cíle = načíst_cíle(výstupy);
+	int správně = 0;
+	for (int p = 0; p < DELKA_UCENI; ++p) {
+		for (int i = 0; i < 60000; ++i) {
+			vysledky[0] = data[i];
+			správně += trenink(vaha, neu, vysledky, derivace, vrstvy, pocty, cíle[i]);
+		}
+		printf("%d\n", správně);
 	}
-	trenink(vaha, neu, );
 	return 0;
 }
-
-/*
-void bin_parsuj_vstupy(float *vstup, FILE *odkud, char **buff) {
-  for (int i = 1; i < VSTUPU; ++i) {
-    vstup[i - 1] = vstup[i];
-  }
-  unsigned int size = 20;
-  getline(buff, &size, odkud);
-  vstup[VSTUPU - 1] = atof(*buff);
-  return;
-}
-*/
-
-/*
-void upload_koef(float **prvni_koef, float prvni_tr, float *druhy_koef,
-                 float druhy_tr, FILE *kam) {
-  for (int i = 0; i < NEU; ++i) {
-    for (int j = 0; j < VSTUPU; ++j) {
-      fprintf(kam, "%.4f\n", prvni_koef[j][i]);
-    }
-    fprintf(kam, "%.4f\n", prvni_tr[i]);
-    fprintf(kam, "%.4f\n", druhy_koef[i]);
-  }
-  fprintf(kam, "%.4f\n", druhy_tr);
-  return;
-}
-
-void import_koef(int vrstev, int *pocty, double ***vaha, FILE *odkud) {
-  for (int i = 0; i < vrstev + 1; ++i) {
-    for (int j = 0; j < pocty[i]; ++j) {
-      for (int k = 0; k < pocty[i + 1]; ++k) {
-
-        getline(buff, &size, odkud);
-        prvni_koef[j][i] = atof(*buff);
-      }
-    }
-    getline(buff, &size, odkud);
-    prvni_tr[i] = atof(*buff);
-    getline(buff, &size, odkud);
-    druhy_koef[i] = atof(*buff);
-  }
-  getline(buff, &size, odkud);
-  druhy_tr = atof(*buff);
-  free(*buff);
-  return;
-}
-*/
