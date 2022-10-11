@@ -61,10 +61,17 @@ double der_kvadrát(double x) {
 
 /*
 iterace provede jeden průchod neuronovou sítí a vrátí číslo uhodnuté kategotie
+
 double ***vaha - vaha[i][j][k] váha spoje mezi neuronem ve vrstvě i indexu j a neuronem ve vrstvě
-i+1 a indexem k double **vysledky vysledky[0] je 784 vstupů +1 threshold, jinak není třeba
-inicializace double **neu neinicializované pole pro všechny neurony mimo thresholdy int vrstvy počet
-skrytých vrstev int *pocty počet neuronů v každé vrstvě bez thresholdů
+i+1 a indexem k double
+
+**vysledky vysledky[0] je 784 vstupů +1 threshold, jinak není třeba
+inicializace
+
+double **neu neinicializované pole pro všechny neurony mimo thresholdy int vrstvy počet
+skrytých vrstev
+
+int *pocty počet neuronů v každé vrstvě bez thresholdů
 */
 
 int iterace(double ***vaha, double **vysledky, double **neu, int vrstvy, int *pocty) {
