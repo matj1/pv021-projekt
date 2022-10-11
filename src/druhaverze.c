@@ -163,5 +163,6 @@ int main(int argc, char **argv) {
 	}
 	*/
 
+	trenink(vaha, neu, );
 	return 0;
 }
