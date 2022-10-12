@@ -69,18 +69,19 @@ i+1 a indexem k
 float **vysledky vysledky[0] je 784 vstupů +1 threshold, jinak není třeba
 inicializace
 
-float **neu neinicializované pole pro všechny neurony mimo thresholdy int vrstvy počet
-skrytých vrstev
+float **neu neinicializované pole pro všechny neurony mimo thresholdy
+
+int vrstvy počet skrytých vrstev
 
 int *pocty počet neuronů v každé vrstvě bez thresholdů
 */
 
 int iterace(float ***vaha, float **vysledky, float **neu, int vrstvy, int *pocty) {
-	for (int i = 0; i < vrstvy + 1; ++i) { // vrstev je vrstvy +2, ale poslední je výstupní
+	for (int i = 0; i < vrstvy; ++i) { // vrstev je vrstvy +2 (poslední index je vrstvy+1), ale poslední je výstupní
 		vysledky[i][pocty[i]] = 1;       // nastavení thresholdového neuronu
 		for (int k = 0; k < pocty[i + 1]; ++k) {       // pro každý neuron vyšší vrstvy
 			neu[i + 1][k] = 0;                       // vynulování na začátku sumování
-			for (int j = 0; j < pocty[i] + 1; ++j) { // +1 aby se počítalo i s thresholdem
+			for (int j = 0; j < pocty[i] + 1; ++j) { // pro každý neuron aktuální vrstvy +1 aby se počítalo i s thresholdem
 				neu[i + 1][k] += vysledky[i][j] * vaha[i][j][k];
 			}
 			vysledky[i + 1][k] = relu(neu[i + 1][k]); // otazka vice aktivacnich funkci
@@ -135,7 +136,7 @@ int trenink(float ***vaha, float **neu, float **vysledky, float **derivace, int 
 	for (int i = 0; i < vrstvy + 1; ++i) {
 		for (int j = 0; j < pocty[i] + 1; ++j) {
 			for (int k = 0; k < pocty[i + 1]; ++k) {
-				vaha[i][j][k] -= derivace[i+1][k] * vysledky[i][j] *
+				vaha[i][j][k] -= derivace[i + 1][k] * vysledky[i][j] *
 				                 RYCHLOST; // RYCHLOST jako funkce něčeho ?
 			}
 		}
@@ -146,9 +147,8 @@ int trenink(float ***vaha, float **neu, float **vysledky, float **derivace, int 
 
 int main(int argc, char **argv) {
 
-	//deklarace všech velkých polí
-	
-	
+	// deklarace všech velkých polí
+
 	int vrstvy = atoi(argv[1]); // uzivatel zada pocet skrytych (ne vstupnich, ne
 	                            // vystupnich) vrstev
 	int pocty[vrstvy + 2];
@@ -197,28 +197,27 @@ int main(int argc, char **argv) {
 	  koef = fopen(argv[i], "r");
 	}
 	*/
-	
-	//načtení dat a trénink
-	
+
+	// načtení dat a trénink
+
 	// TODO pořešit cesty k datům
 	FILE *vstup = fopen("../../data/fashion_mnist_train_vectors.csv", "r");
-	FILE *výstupy = fopen("../../data/fashion_mnist_train_labels.csv", "r");
-	pole_t vektory = načíst_data(vstup);
-	float *příklady = vektory.data;
-	int délka = vektory.velikost;
-	int *cíle = načíst_cíle(výstupy, délka);
+	FILE *vystupy = fopen("../../data/fashion_mnist_train_labels.csv", "r");
+	pole_t vektory = nacist_data(vstup);
+	float *priklady = vektory.data;
+	int delka = vektory.velikost;
+	int *cíle = nacist_cíle(vystupy, delka);
 	int správně = 0;
 	for (int p = 0; p < DELKA_UCENI; ++p) {
-		for (int i = 0; i < délka; ++i) {
-			vysledky[0] = &příklady[i * 785];
+		for (int i = 0; i < delka; ++i) {
+			vysledky[0] = &priklady[i * 785];
 			správně += trenink(vaha, neu, vysledky, derivace, vrstvy, pocty, cíle[i]);
 		}
 		printf("%d\n", správně);
 	}
-	free(příklady.data);
+	free(priklady.data);
 	return 0;
 }
-
 
 /* Přehled všeho, co ještě není dořešené:
 1. Kde budou data relativně ke kódu
@@ -226,7 +225,7 @@ int main(int argc, char **argv) {
 3. Vybrat správnou architekturu
 4. Vybrat správnou aktivační funkci / více aktivačních funkcí?
 5. Mají se upravit váhy po každém příkladu, nebo až po n-tici příkladů?
-6. Konečně by se to mělo spustit 
+6. Konečně by se to mělo spustit
 
 
 

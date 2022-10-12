@@ -8,104 +8,104 @@
 #include <string.h>
 
 #define VELIKOST_BUFFERU (1 << 16)
-#define VELIKOST_OBRÁZKU (28 * 28)
+#define VELIKOST_OBRAZKU (28 * 28)
 
 /**
- * Toto bere deskriptor souboru se vstupními daty a vrací pole vstupních obrázků.
- * Každý vstupní obrázek je pole floatů.
+ * Toto bere deskriptor souboru se vstupnimi daty a vraci pole vstupnich obrazku.
+ * Každy vstupni obrazek je pole floatu.
  *
- * @param soubor ukazatel na soubor budoucí čteným
- * @return pole zpracovaných vstupních dat; každý prvek je jeden obrázek a má VELIKOST_OBRÁZKU prvků
+ * @param soubor ukazatel na soubor budouci ctenym
+ * @return pole zpracovanych vstupnich dat; každy prvek je jeden obrazek a ma VELIKOST_OBRAZKU prvku
  */
-pole_t načíst_data(FILE *soubor) {
-	size_t počet_řádků = sečti_řádky(soubor);
+pole_t nacist_data(FILE *soubor) {
+	size_t pocet_radku = secti_radky(soubor);
 	char buffer[VELIKOST_BUFFERU] = {0};
-	float *data = malloc(počet_řádků * (VELIKOST_OBRÁZKU + 1) * sizeof(float));
+	float *data = malloc(pocet_radku * (VELIKOST_OBRAZKU + 1) * sizeof(float));
 
-	size_t byty_přečteny;
-	size_t délka_řádku = VELIKOST_OBRÁZKU * 4;
-	char *řádek = malloc(délka_řádku);
+	size_t byty_precteny;
+	size_t delka_radku = VELIKOST_OBRAZKU * 4;
+	char *radek = malloc(delka_radku);
 
-	// hlavní smyčka načítání dat
-	size_t počet_přečtených_řádků = 0;
+	// hlavni smycka nacitani dat
+	size_t pocet_prectenych_radku = 0;
 	while (!feof(soubor)) {
-		getline(&řádek, &délka_řádku, soubor);
+		getline(&radek, &delka_radku, soubor);
 
-		size_t počet_přečtených_čísel = 0;
-		char *číslo = řádek;
+		size_t pocet_prectenych_cisel = 0;
+		char *cislo = radek;
 		while (1) {
-			číslo = strtok(číslo, ",");
-			if (číslo == NULL) {
+			cislo = strtok(cislo, ",");
+			if (cislo == NULL) {
 				break;
 			}
 
-			data[počet_přečtených_řádků * (délka_řádku + 1) + počet_přečtených_čísel] =
-			      atof(číslo);
-			počet_přečtených_čísel++;
+			data[pocet_prectenych_radku * (delka_radku + 1) + pocet_prectenych_cisel] =
+			      atof(cislo);
+			pocet_prectenych_cisel++;
 		}
 
-		počet_přečtených_řádků++;
+		pocet_prectenych_radku++;
 	}
-	free(řádek);
-	return (pole_t){.velikost = počet_řádků, .data = data};
+	free(radek);
+	return (pole_t){.velikost = pocet_radku, .data = data};
 }
 
 /**
- * načte cíle :D
+ * nacte cile :D
  *
  *
  *
  *
  *
  */
-int *načíst_cíle(FILE *soubor, int počet_řádků) {
+int *nacist_cile(FILE *soubor, int pocet_radku) {
 	char buffer[VELIKOST_BUFFERU] = {0};
-	int *data = malloc(počet_řádků * sizeof(int));
+	int *data = malloc(pocet_radku * sizeof(int));
 
-	size_t byty_přečteny;
-	size_t délka_řádku = 2;
-	char *řádek = malloc(délka_řádku);
+	size_t byty_precteny;
+	size_t delka_radku = 2;
+	char *radek = malloc(delka_radku);
 
-	// hlavní smyčka načítání dat
-	size_t počet_přečtených_řádků = 0;
-	for (int i = 0; i < počet_řádků; ++i) {
-		getline(&řádek, &délka_řádku, soubor);
-		data[počet_přečtených_řádků] = atof(řádek[0]);
+	// hlavni smycka nacitani dat
+	size_t pocet_prectenych_radku = 0;
+	for (int i = 0; i < pocet_radku; ++i) {
+		getline(&radek, &delka_radku, soubor);
+		data[pocet_prectenych_radku] = atof(radek[0]);
 
-		počet_přečtených_řádků++;
+		pocet_prectenych_radku++;
 	}
 
 	return data;
 }
 
 /**
- * Toto přečte daný soubor a vrátí počet řádků v něm.
- * Toto vrátí ukazatel pozice v tom souboru na začátek.
+ * Toto precte dany soubor a vrati pocet radku v něm.
+ * Toto vrati ukazatel pozice v tom souboru na zacatek.
  *
  * @param soubor
- * @return počet řádků
+ * @return pocet radku
  */
-size_t sečti_řádky(FILE *soubor) {
+size_t secti_radky(FILE *soubor) {
 	char buffer[VELIKOST_BUFFERU] = {0};
-	size_t počet_řádků = 0;
-	size_t byty_přečteny;
+	size_t pocet_radku = 0;
+	size_t byty_precteny;
 
 	do {
-		byty_přečteny = fread(buffer, 1, VELIKOST_BUFFERU, soubor);
+		byty_precteny = fread(buffer, 1, VELIKOST_BUFFERU, soubor);
 
 		for (size_t p = 0; p < VELIKOST_BUFFERU; p++) {
 			if (buffer[p] == '\n') {
-				počet_řádků++;
+				pocet_radku++;
 			}
 		}
 	} while (!feof(soubor));
 
-	if ([byty_přečteny - 1] != '\n') { // pro započítání řádku na konci bez \n
-		počet_řádků++;
+	if ([byty_precteny - 1] != '\n') { // pro zapocitani radku na konci bez \n
+		pocet_radku++;
 	}
 
 	rewind(soubor);
-	return počet_řádků;
+	return pocet_radku;
 }
 
 /*

@@ -11,30 +11,30 @@ typedef struct {
 } pole_t;
 
 /**
- * Velikost bufferu pro načítání souboru
+ * Velikost bufferu pro nacitAní souboru
  */
 #define VELIKOST_BUFFERU (1 << 16)
-#define VELIKOST_OBRÁZKU (28 * 28)
+#define VELIKOST_OBRAZKU (28 * 28)
 
 /**
- * Toto bere deskriptor souboru se vstupními daty a vrací pole vstupních obrázků.
- * Každý vstupní obrázek je pole floatů.
+ * Toto bere deskriptor souboru se vstupními daty a vrací pole vstupních obrAzku.
+ * Každý vstupní obrAzek je pole floatu.
  *
- * @param soubor ukazatel na soubor budoucí čteným
+ * @param soubor ukazatel na soubor budoucí cteným
  * @return pole zpracovaných vstupních dat
  */
-pole_t načíst_data(FILE *soubor);
+pole_t nacist_data(FILE *soubor);
 
-int *načíst_cíle(FILE *soubor, int počet_řádků);
+int *nacist_cíle(FILE *soubor, int pocet_radku);
 
 /**
- * Toto přečte daný soubor a vrátí počet řádků v něm.
- * Toto vrátí ukazatel pozice v tom souboru na začátek.
+ * Toto precte daný soubor a vrAtí pocet rAdku v něm.
+ * Toto vrAtí ukazatel pozice v tom souboru na zacAtek.
  *
  * @param soubor
- * @return počet řádků
+ * @return pocet rAdku
  */
-size_t sečti_řádky(FILE *soubor);
+size_t secti_radky(FILE *soubor);
 
 // void bin_parsuj_vstupy(float *vstup, FILE *odkud, char **buff) {
 //  for (int i = 1; i < VSTUPU; ++i) {
