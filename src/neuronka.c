@@ -5,12 +5,11 @@
 
 #define VSTUPU 784
 #define VYSTUPU 10
-#define NEU 10
 #define SKLON 0.05
 #define RYCHLOST 2
 #define DELKA_UCENI 5000
 
-// za sebe mluvící různé pokusné aktivační funkce, požije se nejspíš RELU
+// za sebe mluvící různé pokusné aktivační funkce, použije se nejspíš relu
 
 float sigmoida(float x) { return 1 / (1 + exp(-x)); }
 
@@ -136,7 +135,7 @@ int trenink(float ***vaha, float **neu, float **vysledky, float **derivace, int 
 	for (int i = 0; i < vrstvy + 1; ++i) {
 		for (int j = 0; j < pocty[i] + 1; ++j) {
 			for (int k = 0; k < pocty[i + 1]; ++k) {
-				vaha[i][j][k] -= derivace[i][k] * vysledky[i][j] *
+				vaha[i][j][k] -= derivace[i+1][k] * vysledky[i][j] *
 				                 RYCHLOST; // RYCHLOST jako funkce něčeho ?
 			}
 		}
@@ -146,6 +145,10 @@ int trenink(float ***vaha, float **neu, float **vysledky, float **derivace, int 
 }
 
 int main(int argc, char **argv) {
+
+	//deklarace všech velkých polí
+	
+	
 	int vrstvy = atoi(argv[1]); // uzivatel zada pocet skrytych (ne vstupnich, ne
 	                            // vystupnich) vrstev
 	int pocty[vrstvy + 2];
@@ -183,9 +186,9 @@ int main(int argc, char **argv) {
 		float vysledek[pocty[j] + 1];
 		float der[pocty[j]];
 		// memset(neurony, 0, pocty[j]); //není třeba
-		neu[j] = neurony; // neu[j-1] není potřeba sumovat vstupní vrstvu
+		neu[j] = neurony; // neu[j-1] ? není potřeba sumovat vstupní vrstvu
 		vysledky[j] = vysledek;
-		derivace[j] = der; // nebo der[j-1] nepouzivam derivaci prvni vstupni vrstvy
+		derivace[j] = der; // nebo der[j-1] ? nepouzivam derivaci prvni vstupni vrstvy
 	}
 
 	/*
@@ -194,21 +197,37 @@ int main(int argc, char **argv) {
 	  koef = fopen(argv[i], "r");
 	}
 	*/
-
+	
+	//načtení dat a trénink
+	
 	// TODO pořešit cesty k datům
-	FILE *vstup = fopen("../data/pv021_project/data/fashion_mnist_train_vectors.csv", "r");
-	FILE *výstupy = fopen("../data/pv021_project/data/fashion_mnist_train_labels.csv", "r");
+	FILE *vstup = fopen("../../data/fashion_mnist_train_vectors.csv", "r");
+	FILE *výstupy = fopen("../../data/fashion_mnist_train_labels.csv", "r");
 	pole_t vektory = načíst_data(vstup);
-	float *data = vektory.data;
+	float *příklady = vektory.data;
 	int délka = vektory.velikost;
 	int *cíle = načíst_cíle(výstupy, délka);
 	int správně = 0;
 	for (int p = 0; p < DELKA_UCENI; ++p) {
 		for (int i = 0; i < délka; ++i) {
-			vysledky[0] = &data[i * 785];
+			vysledky[0] = &příklady[i * 785];
 			správně += trenink(vaha, neu, vysledky, derivace, vrstvy, pocty, cíle[i]);
 		}
 		printf("%d\n", správně);
 	}
+	free(příklady.data);
 	return 0;
 }
+
+
+/* Přehled všeho, co ještě není dořešené:
+1. Kde budou data relativně ke kódu
+2. Nepoužívaný nultý pointer v neu a derivace
+3. Vybrat správnou architekturu
+4. Vybrat správnou aktivační funkci / více aktivačních funkcí?
+5. Mají se upravit váhy po každém příkladu, nebo až po n-tici příkladů?
+6. Konečně by se to mělo spustit 
+
+
+
+*/

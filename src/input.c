@@ -46,7 +46,7 @@ pole_t načíst_data(FILE *soubor) {
 
 		počet_přečtených_řádků++;
 	}
-
+	free(řádek);
 	return (pole_t){.velikost = počet_řádků, .data = data};
 }
 
