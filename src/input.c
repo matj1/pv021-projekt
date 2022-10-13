@@ -89,6 +89,8 @@ size_t secti_radky(FILE *soubor) {
 		for (size_t p = 0; p < VELIKOST_BUFFERU; p++) {
 			if (buffer[p] == '\n') {
 				pocet_radku++;
+			} else if (buffer[p] == '\0') {
+				break;
 			}
 		}
 	} while (!feof(soubor));

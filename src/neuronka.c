@@ -136,8 +136,7 @@ int main(int argc, char **argv) {
 		float vrstva[pocty[j]][pocty[j + 1]];
 		for (int k = 0; k < pocty[j] + 1; ++k) {
 			for (int g = 0; g < pocty[j + 1]; ++g) {
-				vrstva[k][g] = 0.6 * (float)rand() / (float)RAND_MAX -
-				               0.3; // inicializace vah mezi -1 a 1
+				vrstva[k][g] = 0.6f * (float)rand() / (float)RAND_MAX - 0.3; // inicializace vah mezi -1 a 1
 			}
 		}
 		vaha[j] = vrstva;
@@ -170,8 +169,8 @@ int main(int argc, char **argv) {
 	// načteni dat a trénink
 
 	// TODO pořešit cesty k datům
-	FILE *vstup = fopen("../../data/fashion_mnist_train_vectors.csv", "r");
-	FILE *vystupy = fopen("../../data/fashion_mnist_train_labels.csv", "r");
+	FILE *vstup = fopen("data/fashion_mnist_train_vectors.csv", "r");
+	FILE *vystupy = fopen("data/fashion_mnist_train_labels.csv", "r");
 	pole_t vektory = nacist_data(vstup);
 	float *priklady = vektory.data;
 	int delka = vektory.velikost;
