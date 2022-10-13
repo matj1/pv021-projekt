@@ -63,7 +63,7 @@ int *nacist_cile(FILE *soubor, int pocet_radku) {
 	size_t pocet_prectenych_radku = 0;
 	for (int i = 0; i < pocet_radku; ++i) {
 		getline(&radek, &delka_radku, soubor);
-		data[pocet_prectenych_radku] = (float) (radek[0]-48);
+		data[pocet_prectenych_radku] = radek[0]-48;
 
 		pocet_prectenych_radku++;
 	}

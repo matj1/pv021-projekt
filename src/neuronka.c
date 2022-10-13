@@ -117,9 +117,11 @@ int trenink(float ***vaha, float **neu, float **vysledky, float **derivace, int 
 int main(int argc, char **argv) {
 
 	// deklarace všech velkých poli
-
+	
 	int vrstvy = atoi(argv[1]); // uzivatel zada pocet skrytych (ne vstupnich, ne
 	                            // vystupnich) vrstev
+	printf("%d\n",vrstvy);
+	
 	int pocty[vrstvy + 2];
 	pocty[0] = VSTUPU;
 	pocty[vrstvy + 1] = VYSTUPU;
@@ -128,19 +130,25 @@ int main(int argc, char **argv) {
 		pocty[i] = atoi(argv[i + 1]); // uzivatel zada pocty skrytych neuronu jako
 		                              // dalsi argumenty main (tolik cisel, kolik
 		                              // deklaroval, ze bude zadavat)
+		//printf("%d\n",pocty[i]);
+	}
+	for (int i=0;i<vrstvy+2;++i){
+	printf("%d: %d\n",i,pocty[i]);
 	}
 
 	float **vaha[vrstvy + 1];
 	srand(0);
 	for (int j = 0; j < vrstvy + 1; ++j) {
-		float vrstva[pocty[j]][pocty[j + 1]];
+		float vrstva[pocty[j]][pocty[j+1]];
 		for (int k = 0; k < pocty[j] + 1; ++k) {
 			for (int g = 0; g < pocty[j + 1]; ++g) {
 				vrstva[k][g] = 0.6 * (float)rand() / (float)RAND_MAX -
 				               0.3; // inicializace vah mezi -1 a 1
+				 printf("%d; %d, %d: %f\n",j,k,g,vrstva[k][g]);
 			}
 		}
-		vaha[j] = vrstva;
+		printf("%d.. %p ..\n",j,vrstva);
+		vaha[j] = (float **) vrstva;
 	}
 
 	float *neu[vrstvy + 2]; // neu[0] ale nepouživam (přehlednost ?)
@@ -150,6 +158,7 @@ int main(int argc, char **argv) {
 	// neu[0]= float neurony[VSTUPU];
 	// vysledky[0] = float vysledek[VSTUPU];
 
+	printf("hehe\n");
 	for (int j = 1; j < vrstvy + 2; ++j) {
 		float neurony[pocty[j]];
 		float vysledek[pocty[j] + 1];
@@ -169,6 +178,7 @@ int main(int argc, char **argv) {
 
 	// načteni dat a trénink
 
+	printf("huhu\n");
 	// TODO pořešit cesty k datům
 	FILE *vstup = fopen("../../data/fashion_mnist_train_vectors.csv", "r");
 	FILE *vystupy = fopen("../../data/fashion_mnist_train_labels.csv", "r");
