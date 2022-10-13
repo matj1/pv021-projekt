@@ -6,3 +6,5 @@ set(CMAKE_C_STANDARD 17)
 add_executable(pv021_projekt
         src/neuronka.c
         src/input.c)
+
+target_link_libraries(${PROJECT_NAME} m)
