@@ -29,37 +29,6 @@ float der_relu(float x) {
 	return SKLON; // 0;
 }
 
-float logaritmická(float x) {
-	if (x > 0) {
-		return log(x + 1);
-	}
-	return 0; // SKLON * x;
-}
-
-float der_logaritmická(float x) {
-	if (x > 0) {
-		return 1 / (x + 1);
-	}
-	return SKLON; // 0;
-}
-
-float kvadrát(float x) {
-	if (x > -1 && x < 1) {
-		return x * x - 1;
-	}
-	return 0;
-}
-
-float der_kvadrát(float x) {
-	if (x < -1) {
-		return SKLON; // 0;
-	}
-	if (x > 1) {
-		return -SKLON; // 0;
-	}
-	return x;
-}
-
 /*
 iterace provede jeden průchod neuronovou sítí a vrátí číslo uhodnuté kategotie
 
@@ -206,7 +175,7 @@ int main(int argc, char **argv) {
 	pole_t vektory = nacist_data(vstup);
 	float *priklady = vektory.data;
 	int delka = vektory.velikost;
-	int *cíle = nacist_cíle(vystupy, delka);
+	int *cíle = nacist_cile(vystupy, delka);
 	int správně = 0;
 	for (int p = 0; p < DELKA_UCENI; ++p) {
 		for (int i = 0; i < delka; ++i) {
@@ -215,7 +184,7 @@ int main(int argc, char **argv) {
 		}
 		printf("%d\n", správně);
 	}
-	free(priklady.data);
+	free(priklady);
 	return 0;
 }
 

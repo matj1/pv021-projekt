@@ -1,14 +1,7 @@
-//
-// Created by matj1 on 11.10.22.
-//
-
 #include "input.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#define VELIKOST_BUFFERU (1 << 16)
-#define VELIKOST_OBRAZKU (28 * 28)
 
 /**
  * Toto bere deskriptor souboru se vstupnimi daty a vraci pole vstupnich obrazku.
@@ -100,7 +93,7 @@ size_t secti_radky(FILE *soubor) {
 		}
 	} while (!feof(soubor));
 
-	if ([byty_precteny - 1] != '\n') { // pro zapocitani radku na konci bez \n
+	if (buffer[byty_precteny - 1] != '\n') { // pro zapocitani radku na konci bez \n
 		pocet_radku++;
 	}
 

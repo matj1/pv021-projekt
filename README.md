@@ -1,4 +1,4 @@
-put your UČOs (and names) on this line (no exact format required)
+Matěj Bagar, 485195; Martin Pernica, 492978
 ## PV021 project -- Deep Learning from Scratch
 
 ### DEADLINE

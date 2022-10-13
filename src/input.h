@@ -1,9 +1,8 @@
-//
-// Created by matj1 on 11.10.22.
-//
-
 #ifndef PV021_PROJEKT_INPUT_H
 #define PV021_PROJEKT_INPUT_H
+
+#include <stddef.h>
+#include <stdio.h>
 
 typedef struct {
 	float *data;
@@ -11,7 +10,7 @@ typedef struct {
 } pole_t;
 
 /**
- * Velikost bufferu pro nacitAní souboru
+ * Velikost bufferu pro načitání souboru
  */
 #define VELIKOST_BUFFERU (1 << 16)
 #define VELIKOST_OBRAZKU (28 * 28)
@@ -25,7 +24,7 @@ typedef struct {
  */
 pole_t nacist_data(FILE *soubor);
 
-int *nacist_cíle(FILE *soubor, int pocet_radku);
+int *nacist_cile(FILE *soubor, int pocet_radku);
 
 /**
  * Toto precte daný soubor a vrAtí pocet rAdku v něm.
