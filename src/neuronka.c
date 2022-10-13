@@ -9,7 +9,7 @@
 #define RYCHLOST 2
 #define DELKA_UCENI 5000
 
-// za sebe mluvící různé pokusné aktivační funkce, použije se nejspíš relu
+// za sebe mluvici různé pokusné aktivačni funkce, použije se nejspiš relu
 
 float sigmoida(float x) { return 1 / (1 + exp(-x)); }
 
@@ -29,28 +29,28 @@ float der_relu(float x) {
 	return SKLON; // 0;
 }
 
-float logaritmická(float x) {
+float logaritmicka(float x) {
 	if (x > 0) {
 		return log(x + 1);
 	}
 	return 0; // SKLON * x;
 }
 
-float der_logaritmická(float x) {
+float der_logaritmicka(float x) {
 	if (x > 0) {
 		return 1 / (x + 1);
 	}
 	return SKLON; // 0;
 }
 
-float kvadrát(float x) {
+float kvadrat(float x) {
 	if (x > -1 && x < 1) {
 		return x * x - 1;
 	}
 	return 0;
 }
 
-float der_kvadrát(float x) {
+float der_kvadrat(float x) {
 	if (x < -1) {
 		return SKLON; // 0;
 	}
@@ -61,38 +61,38 @@ float der_kvadrát(float x) {
 }
 
 /*
-iterace provede jeden průchod neuronovou sítí a vrátí číslo uhodnuté kategotie
+iterace provede jeden průchod neuronovou siti a vrati čislo uhodnuté kategotie
 
-float ***vaha - vaha[i][j][k] váha spoje mezi neuronem ve vrstvě i indexu j a neuronem ve vrstvě
+float ***vaha - vaha[i][j][k] vaha spoje mezi neuronem ve vrstve i indexu j a neuronem ve vrstve
 i+1 a indexem k
 
-float **vysledky vysledky[0] je 784 vstupů +1 threshold, jinak není třeba
+float **vysledky vysledky[0] je 784 vstupů +1 threshold, jinak neni třeba
 inicializace
 
 float **neu neinicializované pole pro všechny neurony mimo thresholdy
 
 int vrstvy počet skrytých vrstev
 
-int *pocty počet neuronů v každé vrstvě bez thresholdů
+int *pocty počet neuronů v každé vrstve bez thresholdů
 */
 
 int iterace(float ***vaha, float **vysledky, float **neu, int vrstvy, int *pocty) {
-	for (int i = 0; i < vrstvy; ++i) { // vrstev je vrstvy +2 (poslední index je vrstvy+1), ale poslední je výstupní
-		vysledky[i][pocty[i]] = 1;       // nastavení thresholdového neuronu
-		for (int k = 0; k < pocty[i + 1]; ++k) {       // pro každý neuron vyšší vrstvy
-			neu[i + 1][k] = 0;                       // vynulování na začátku sumování
-			for (int j = 0; j < pocty[i] + 1; ++j) { // pro každý neuron aktuální vrstvy +1 aby se počítalo i s thresholdem
+	for (int i = 0; i < vrstvy; ++i) { // vrstev je vrstvy +2 (posledni index je vrstvy+1), ale posledni je výstupni
+		vysledky[i][pocty[i]] = 1;       // nastaveni thresholdového neuronu
+		for (int k = 0; k < pocty[i + 1]; ++k) {       // pro každý neuron vyšši vrstvy
+			neu[i + 1][k] = 0;                       // vynulovani na začatku sumovani
+			for (int j = 0; j < pocty[i] + 1; ++j) { // pro každý neuron aktualni vrstvy +1 aby se počitalo i s thresholdem
 				neu[i + 1][k] += vysledky[i][j] * vaha[i][j][k];
 			}
 			vysledky[i + 1][k] = relu(neu[i + 1][k]); // otazka vice aktivacnich funkci
 		}
 	}
 
-	//řešení výstupní vrstvy
+	//řešeni výstupni vrstvy
 	int max = 0;
 	for (int i = 0; i < VYSTUPU; ++i) {
 		neu[vrstvy + 1][i] = 0;
-		vysledky[vrstvy][pocty[vrstvy]] = 1; // nastavení thresholdu
+		vysledky[vrstvy][pocty[vrstvy]] = 1; // nastaveni thresholdu
 		for (int j = 0; j < pocty[vrstvy] + 1; ++j) {
 			neu[vrstvy + 1][i] += vysledky[vrstvy][j] * vaha[vrstvy][j][i];
 		}
@@ -119,7 +119,7 @@ int trenink(float ***vaha, float **neu, float **vysledky, float **derivace, int 
 		if (i != cil) {
 			derivace[vrstvy + 1][i] =
 			      vysledky[vrstvy + 1]
-			              [i]; // anebo += , příprava na přístup několik příkladů: jedno učení
+			              [i]; // anebo += , připrava na přistup nekolik přikladů: jedno učeni
 		}
 	}
 	derivace[vrstvy + 1][cil] = 1 - vysledky[vrstvy + 1][cil]; // taky nebo +=
@@ -137,17 +137,17 @@ int trenink(float ***vaha, float **neu, float **vysledky, float **derivace, int 
 		for (int j = 0; j < pocty[i] + 1; ++j) {
 			for (int k = 0; k < pocty[i + 1]; ++k) {
 				vaha[i][j][k] -= derivace[i + 1][k] * vysledky[i][j] *
-				                 RYCHLOST; // RYCHLOST jako funkce něčeho ?
+				                 RYCHLOST; // RYCHLOST jako funkce nečeho ?
 			}
 		}
 	}
-	return vysledek == cil; // můžeme potom sečíst výsledky tréninku pro celkový počet správně
-	                        // odhadnutých číslic
+	return vysledek == cil; // můžeme potom sečist výsledky tréninku pro celkový počet spravne
+	                        // odhadnutých čislic
 }
 
 int main(int argc, char **argv) {
 
-	// deklarace všech velkých polí
+	// deklarace všech velkých poli
 
 	int vrstvy = atoi(argv[1]); // uzivatel zada pocet skrytych (ne vstupnich, ne
 	                            // vystupnich) vrstev
@@ -174,9 +174,9 @@ int main(int argc, char **argv) {
 		vaha[j] = vrstva;
 	}
 
-	float *neu[vrstvy + 2]; // neu[0] ale nepoužívám (přehlednost ?)
+	float *neu[vrstvy + 2]; // neu[0] ale nepouživam (přehlednost ?)
 	float *vysledky[vrstvy + 2];
-	float *derivace[vrstvy + 2]; // derivace[0] taky nepoužívám
+	float *derivace[vrstvy + 2]; // derivace[0] taky nepouživam
 
 	// neu[0]= float neurony[VSTUPU];
 	// vysledky[0] = float vysledek[VSTUPU];
@@ -185,8 +185,8 @@ int main(int argc, char **argv) {
 		float neurony[pocty[j]];
 		float vysledek[pocty[j] + 1];
 		float der[pocty[j]];
-		// memset(neurony, 0, pocty[j]); //není třeba
-		neu[j] = neurony; // neu[j-1] ? není potřeba sumovat vstupní vrstvu
+		// memset(neurony, 0, pocty[j]); //neni třeba
+		neu[j] = neurony; // neu[j-1] ? neni potřeba sumovat vstupni vrstvu
 		vysledky[j] = vysledek;
 		derivace[j] = der; // nebo der[j-1] ? nepouzivam derivaci prvni vstupni vrstvy
 	}
@@ -198,7 +198,7 @@ int main(int argc, char **argv) {
 	}
 	*/
 
-	// načtení dat a trénink
+	// načteni dat a trénink
 
 	// TODO pořešit cesty k datům
 	FILE *vstup = fopen("../../data/fashion_mnist_train_vectors.csv", "r");
@@ -206,27 +206,27 @@ int main(int argc, char **argv) {
 	pole_t vektory = nacist_data(vstup);
 	float *priklady = vektory.data;
 	int delka = vektory.velikost;
-	int *cíle = nacist_cíle(vystupy, delka);
-	int správně = 0;
+	int *cile = nacist_cile(vystupy, delka);
+	int spravne = 0;
 	for (int p = 0; p < DELKA_UCENI; ++p) {
 		for (int i = 0; i < delka; ++i) {
 			vysledky[0] = &priklady[i * 785];
-			správně += trenink(vaha, neu, vysledky, derivace, vrstvy, pocty, cíle[i]);
+			spravne += trenink(vaha, neu, vysledky, derivace, vrstvy, pocty, cile[i]);
 		}
-		printf("%d\n", správně);
+		printf("%d\n", spravne);
 	}
 	free(priklady.data);
 	return 0;
 }
 
-/* Přehled všeho, co ještě není dořešené:
-1. Kde budou data relativně ke kódu
-2. Nepoužívaný nultý pointer v neu a derivace
-3. Vybrat správnou architekturu
-4. Vybrat správnou aktivační funkci / více aktivačních funkcí?
-5. Mají se upravit váhy po každém příkladu, nebo až po n-tici příkladů?
-6. Konečně by se to mělo spustit
-7. Vyřešit, jestli nebude rychlost učení na něčem závislá.
+/* Přehled všeho, co ješte neni dořešené:
+1. Kde budou data relativne ke kódu
+2. Nepouživaný nultý pointer v neu a derivace
+3. Vybrat spravnou architekturu
+4. Vybrat spravnou aktivačni funkci / vice aktivačnich funkci?
+5. Maji se upravit vahy po každém přikladu, nebo až po n-tici přikladů?
+6. Konečne by se to melo spustit
+7. Vyřešit, jestli nebude rychlost učeni na nečem zavisla.
 
 
 */
