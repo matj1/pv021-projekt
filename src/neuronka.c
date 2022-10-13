@@ -136,8 +136,8 @@ int main(int argc, char **argv) {
 		float vrstva[pocty[j]][pocty[j + 1]];
 		for (int k = 0; k < pocty[j] + 1; ++k) {
 			for (int g = 0; g < pocty[j + 1]; ++g) {
-				vrstva[k][g] = 2 * (float)rand() / (float)RAND_MAX -
-				               1; // inicializace vah mezi -1 a 1
+				vrstva[k][g] = 0.6 * (float)rand() / (float)RAND_MAX -
+				               0.3; // inicializace vah mezi -1 a 1
 			}
 		}
 		vaha[j] = vrstva;
