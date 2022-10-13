@@ -226,7 +226,7 @@ int main(int argc, char **argv) {
 4. Vybrat správnou aktivační funkci / více aktivačních funkcí?
 5. Mají se upravit váhy po každém příkladu, nebo až po n-tici příkladů?
 6. Konečně by se to mělo spustit
-
+7. Vyřešit, jestli nebude rychlost učení na něčem závislá.
 
 
 */
