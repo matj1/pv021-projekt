@@ -10,37 +10,31 @@
  * @param soubor ukazatel na soubor budouci ctenym
  * @return pole zpracovanych vstupnich dat; každy prvek je jeden obrazek a ma VELIKOST_OBRAZKU prvku
  */
-pole_t nacist_data(FILE *soubor) {
-	size_t pocet_radku = secti_radky(soubor);
-	char buffer[VELIKOST_BUFFERU] = {0};
+float *nacist_data(FILE *soubor, int pocet_radku) {
 	float *data = malloc(pocet_radku * (VELIKOST_OBRAZKU + 1) * sizeof(float));
 
-	size_t byty_precteny;
-	size_t delka_radku = VELIKOST_OBRAZKU * 4;
+	size_t delka_radku = VELIKOST_OBRAZKU*4*sizeof(char);
 	char *radek = malloc(delka_radku);
-
+	
+	printf("nacitam %d radku\n",pocet_radku); //debug
+	
 	// hlavni smycka nacitani dat
-	size_t pocet_prectenych_radku = 0;
-	while (!feof(soubor)) {
+	for (int i=0; i<pocet_radku; ++i) {
+		// printf("%d\n",i); //debug
 		getline(&radek, &delka_radku, soubor);
-
+		// printf("%s\n",radek); //debug
 		size_t pocet_prectenych_cisel = 0;
-		char *cislo = radek;
-		while (1) {
-			cislo = strtok(cislo, ",");
-			if (cislo == NULL) {
-				break;
-			}
-
-			data[pocet_prectenych_radku * (delka_radku + 1) + pocet_prectenych_cisel] =
-			      atof(cislo);
+		char *cislo = strtok(radek,",");
+		while (cislo!=NULL) {
+			// printf("%s ",cislo); //debug
+			data[i * (VELIKOST_OBRAZKU + 1) + pocet_prectenych_cisel] = atof(cislo)/255;
 			pocet_prectenych_cisel++;
+			cislo = strtok(NULL, ",");
 		}
-
-		pocet_prectenych_radku++;
 	}
 	free(radek);
-	return (pole_t){.velikost = pocet_radku, .data = data};
+	printf("nacitani ok\n"); //debug
+	return data;
 }
 
 /**
@@ -52,22 +46,16 @@ pole_t nacist_data(FILE *soubor) {
  *
  */
 int *nacist_cile(FILE *soubor, int pocet_radku) {
-	char buffer[VELIKOST_BUFFERU] = {0};
 	int *data = malloc(pocet_radku * sizeof(int));
 
-	size_t byty_precteny;
-	size_t delka_radku = 2;
+	size_t delka_radku = 2*sizeof(char);
 	char *radek = malloc(delka_radku);
 
 	// hlavni smycka nacitani dat
-	size_t pocet_prectenych_radku = 0;
 	for (int i = 0; i < pocet_radku; ++i) {
 		getline(&radek, &delka_radku, soubor);
-		data[pocet_prectenych_radku] = (float) (radek[0]-48);
-
-		pocet_prectenych_radku++;
+		data[i] = radek[0]-48;
 	}
-
 	return data;
 }
 
@@ -78,29 +66,16 @@ int *nacist_cile(FILE *soubor, int pocet_radku) {
  * @param soubor
  * @return pocet radku
  */
-size_t secti_radky(FILE *soubor) {
-	char buffer[VELIKOST_BUFFERU] = {0};
-	size_t pocet_radku = 0;
-	size_t byty_precteny;
-
-	do {
-		byty_precteny = fread(buffer, 1, VELIKOST_BUFFERU, soubor);
-
-		for (size_t p = 0; p < VELIKOST_BUFFERU; p++) {
-			if (buffer[p] == '\n') {
-				pocet_radku++;
-			} else if (buffer[p] == '\0') {
-				break;
-			}
-		}
-	} while (!feof(soubor));
-
-	if (buffer[byty_precteny - 1] != '\n') { // pro zapocitani radku na konci bez \n
+int secti_radky(FILE *soubor) { //rvat sem jenom cile
+	size_t velikost=2;
+	char *buffer=malloc(velikost);
+	int pocet_radku = 0;
+	while (!feof(soubor)){
+		getline(&buffer,&velikost,soubor);
 		pocet_radku++;
 	}
-
 	rewind(soubor);
-	return pocet_radku;
+	return pocet_radku-1;
 }
 
 /*

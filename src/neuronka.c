@@ -46,13 +46,21 @@ int *pocty počet neuronů v každé vrstve bez thresholdů
 */
 
 int iterace(float ***vaha, float **vysledky, float **neu, int vrstvy, int *pocty) {
+	printf("iterace\n"); //debug
 	for (int i = 0; i < vrstvy; ++i) { // vrstev je vrstvy +2 (posledni index je vrstvy+1), ale posledni je výstupni
+		printf("%d. vrstva, %d neuronu v nizsi, %d neuronu ve vyssi\n",i,pocty[i],pocty[i+1]); // debug
 		vysledky[i][pocty[i]] = 1;       // nastaveni thresholdového neuronu
 		for (int k = 0; k < pocty[i + 1]; ++k) {       // pro každý neuron vyšši vrstvy
 			neu[i + 1][k] = 0;                       // vynulovani na začatku sumovani
+			printf("neuron %d vynulovan\n",k); //debug
 			for (int j = 0; j < pocty[i] + 1; ++j) { // pro každý neuron aktualni vrstvy +1 aby se počitalo i s thresholdem
+				//printf("pricita se %d. neuron\n",j);
+				//printf("spodni %f\n",vysledky[i][j]);
+				//printf("%d, %d, %d\n",i,j,k);
+				//printf("vaha %f\n",vaha[i][j][k]);
 				neu[i + 1][k] += vysledky[i][j] * vaha[i][j][k];
 			}
+			printf("poscitano, suma je: %f\n",neu[i+1][k]);
 			vysledky[i + 1][k] = relu(neu[i + 1][k]); // otazka vice aktivacnich funkci
 		}
 	}
@@ -82,8 +90,9 @@ int iterace(float ***vaha, float **vysledky, float **neu, int vrstvy, int *pocty
 
 int trenink(float ***vaha, float **neu, float **vysledky, float **derivace, int vrstvy, int *pocty,
             int cil) {
+            printf("trenuju\n"); //debug
 	int vysledek = iterace(vaha, vysledky, neu, vrstvy, pocty);
-
+	printf("po iteraci, vysledek= %d\n", vysledek); //debug
 	for (int i = 0; i < VYSTUPU; ++i) {
 		if (i != cil) {
 			derivace[vrstvy + 1][i] =
@@ -123,25 +132,33 @@ int main(int argc, char **argv) {
 	int pocty[vrstvy + 2];
 	pocty[0] = VSTUPU;
 	pocty[vrstvy + 1] = VYSTUPU;
-
+	printf("%d\n",pocty[0]);
 	for (int i = 1; i <= vrstvy; ++i) {
 		pocty[i] = atoi(argv[i + 1]); // uzivatel zada pocty skrytych neuronu jako
 		                              // dalsi argumenty main (tolik cisel, kolik
 		                              // deklaroval, ze bude zadavat)
+		printf("%d\n",pocty[i]);
 	}
-
+	printf("%d\n",pocty[vrstvy+1]);
+	
 	float **vaha[vrstvy + 1];
+	
+	printf("vahy\n"); //debug
 	srand(0);
+	
 	for (int j = 0; j < vrstvy + 1; ++j) {
-		float vrstva[pocty[j]][pocty[j + 1]];
+		vaha[j]=malloc((pocty[j]+1)*sizeof(float *));
 		for (int k = 0; k < pocty[j] + 1; ++k) {
+			vaha[j][k]=malloc(pocty[j + 1]*sizeof(float));
 			for (int g = 0; g < pocty[j + 1]; ++g) {
-				vrstva[k][g] = 0.6f * (float)rand() / (float)RAND_MAX - 0.3; // inicializace vah mezi -1 a 1
+				vaha[j][k][g] = 0.3 * (float)rand() / (float)RAND_MAX - 0.15; // inicializace vah mezi -1 a 1
+				// printf("%f\n",vaha[j][k][g]); //debug
 			}
 		}
-		vaha[j] = vrstva;
+		
 	}
-
+	printf("%f\n",vaha[0][0][0]); //debug
+	printf("neurony\n"); //debug
 	float *neu[vrstvy + 2]; // neu[0] ale nepouživam (přehlednost ?)
 	float *vysledky[vrstvy + 2];
 	float *derivace[vrstvy + 2]; // derivace[0] taky nepouživam
@@ -150,15 +167,12 @@ int main(int argc, char **argv) {
 	// vysledky[0] = float vysledek[VSTUPU];
 
 	for (int j = 1; j < vrstvy + 2; ++j) {
-		float neurony[pocty[j]];
-		float vysledek[pocty[j] + 1];
-		float der[pocty[j]];
-		// memset(neurony, 0, pocty[j]); //neni třeba
-		neu[j] = neurony; // neu[j-1] ? neni potřeba sumovat vstupni vrstvu
-		vysledky[j] = vysledek;
-		derivace[j] = der; // nebo der[j-1] ? nepouzivam derivaci prvni vstupni vrstvy
+		neu[j] = malloc(pocty[j]*sizeof(float)); // neu[j-1] ? neni potřeba sumovat vstupni vrstvu
+		vysledky[j] = malloc((pocty[j]+1)*sizeof(float));
+		derivace[j] = malloc(pocty[j]*sizeof(float)); // nebo der[j-1] ? nepouzivam derivaci prvni vstupni vrstvy
 	}
-
+	printf("%f\n",derivace[1][2]); //debug
+	
 	/*
 	if (argc > i) {
 	  FILE *koef;
@@ -168,17 +182,37 @@ int main(int argc, char **argv) {
 
 	// načteni dat a trénink
 
+	printf("hehe\n");
 	// TODO pořešit cesty k datům
-	FILE *vstup = fopen("data/fashion_mnist_train_vectors.csv", "r");
-	FILE *vystupy = fopen("data/fashion_mnist_train_labels.csv", "r");
-	pole_t vektory = nacist_data(vstup);
-	float *priklady = vektory.data;
-	int delka = vektory.velikost;
+	FILE *vstup = fopen("../../data/fashion_mnist_train_vectors.csv", "r");
+	printf("vstupy ok\n");
+	FILE *vystupy = fopen("../../data/fashion_mnist_train_labels.csv", "r");
+	printf("vystupy ok\n");
+	int delka = secti_radky(vystupy);
+	float *priklady = nacist_data(vstup,delka);
+	printf("nacitam cile\n");
 	int *cile = nacist_cile(vystupy, delka);
 	int spravne = 0;
-	for (int p = 0; p < DELKA_UCENI; ++p) {
-		for (int i = 0; i < delka; ++i) {
+	
+	/* // debug
+	for (int i=59999*785+1; i< 60000*785; ++i){
+	printf("%f, ",priklady[i]);
+	}
+	printf("\n");
+	printf("%d\n",cile[59999]);
+	*/ 
+	
+	printf("zacatek treninku\n");
+	for (int p = 0; p < 1; ++p) {
+		printf("%d. kolo\n",p);
+		for (int i = 0; i < 3; ++i) {
 			vysledky[0] = &priklady[i * 785];
+			/* //debug
+			for (int j=0; j<784;++j){
+				printf("%.0f, ",vysledky[0][j]);
+			}
+			printf("\n");
+			*/
 			spravne += trenink(vaha, neu, vysledky, derivace, vrstvy, pocty, cile[i]);
 		}
 		printf("%d\n", spravne);
