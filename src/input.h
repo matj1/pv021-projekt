@@ -35,5 +35,6 @@ int *nacist_cile(FILE *soubor, int pocet_radku);
  */
 int secti_radky(FILE *soubor);
 
+void vypis_vahy(FILE *ven, float ***vaha, int *pocty, int vrstvy);
 
 #endif // PV021_PROJEKT_INPUT_H

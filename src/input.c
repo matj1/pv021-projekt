@@ -13,27 +13,27 @@
 float *nacist_data(FILE *soubor, int pocet_radku) {
 	float *data = malloc(pocet_radku * (VELIKOST_OBRAZKU + 1) * sizeof(float));
 
-	size_t delka_radku = VELIKOST_OBRAZKU*4*sizeof(char);
+	size_t delka_radku = VELIKOST_OBRAZKU * 4 * sizeof(char);
 	char *radek = malloc(delka_radku);
-	
-	printf("nacitam %d radku\n",pocet_radku); //debug
-	
+
+	printf("nacitam %d radku\n", pocet_radku); // debug
+
 	// hlavni smycka nacitani dat
-	for (int i=0; i<pocet_radku; ++i) {
+	for (int i = 0; i < pocet_radku; ++i) {
 		// printf("%d\n",i); //debug
 		getline(&radek, &delka_radku, soubor);
 		// printf("%s\n",radek); //debug
 		size_t pocet_prectenych_cisel = 0;
-		char *cislo = strtok(radek,",");
-		while (cislo!=NULL) {
+		char *cislo = strtok(radek, ",");
+		while (cislo != NULL) {
 			// printf("%s ",cislo); //debug
-			data[i * (VELIKOST_OBRAZKU + 1) + pocet_prectenych_cisel] = atof(cislo)/255;
+			data[i * (VELIKOST_OBRAZKU + 1) + pocet_prectenych_cisel] = atof(cislo)/255.0;
 			pocet_prectenych_cisel++;
 			cislo = strtok(NULL, ",");
 		}
 	}
 	free(radek);
-	printf("nacitani ok\n"); //debug
+	printf("nacitani ok\n"); // debug
 	return data;
 }
 
@@ -48,14 +48,15 @@ float *nacist_data(FILE *soubor, int pocet_radku) {
 int *nacist_cile(FILE *soubor, int pocet_radku) {
 	int *data = malloc(pocet_radku * sizeof(int));
 
-	size_t delka_radku = 2*sizeof(char);
+	size_t delka_radku = 2 * sizeof(char);
 	char *radek = malloc(delka_radku);
 
 	// hlavni smycka nacitani dat
 	for (int i = 0; i < pocet_radku; ++i) {
 		getline(&radek, &delka_radku, soubor);
-		data[i] = radek[0]-48;
+		data[i] = radek[0] - 48;
 	}
+	free(radek);
 	return data;
 }
 
@@ -66,16 +67,30 @@ int *nacist_cile(FILE *soubor, int pocet_radku) {
  * @param soubor
  * @return pocet radku
  */
-int secti_radky(FILE *soubor) { //rvat sem jenom cile
-	size_t velikost=2;
-	char *buffer=malloc(velikost);
+int secti_radky(FILE *soubor) { // rvat sem jenom cile
+	size_t velikost = 2;
+	char *buffer = malloc(velikost);
 	int pocet_radku = 0;
-	while (!feof(soubor)){
-		getline(&buffer,&velikost,soubor);
+	while (!feof(soubor)) {
+		getline(&buffer, &velikost, soubor);
 		pocet_radku++;
 	}
 	rewind(soubor);
-	return pocet_radku-1;
+	free(buffer);
+	return pocet_radku - 1;
+}
+
+void vypis_vahy(FILE *ven, float ***vaha, int *pocty, int vrstvy) {
+	for (int i = 0; i < vrstvy + 1; ++i) {
+		for (int j = 0; j < pocty[i + 1]; ++j) {
+			fprintf(ven,"%d. neuron %d. vrstvy\n",j,i+1);
+			for (int k = 0; k < pocty[i] + 1; ++k) {
+				fprintf(ven, "%f; ", vaha[i][k][j]);
+			}
+			fprintf(ven, "\n");
+		}
+		fprintf(ven, "\n");
+	}
 }
 
 /*
