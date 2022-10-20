@@ -10,7 +10,7 @@
 #define SKLON 0.005
 #define RYCHLOST 0.005
 #define DELKA_UCENI 5000
-#define BEC 16
+#define BEC 1
 
 
 // za sebe mluvící různé pokusné aktivační funkce, použije se nejspíš relu
@@ -81,7 +81,7 @@ int iterace(float ***vaha, float **vysledky, float **neu, int vrstvy, int *pocty
 		}
 		//printf("suma %d neuronu %d vrstvy je: %f\n",i, vrstvy + 1, neu[vrstvy + 1][i]);
 		if (neu[vrstvy + 1][i] > neu[vrstvy+1][max]) { //odecitani kvuli preteceni
-		      max = i;
+			max = i;
 		}
 	}
 	float suma = 0;
@@ -124,7 +124,7 @@ int bekpropagejsn(float ***vaha, float **neu, float **vysledky, float **derivace
 	return vysledek == cil; // můžeme potom sečist výsledky tréninku pro celkový počet spravne odhadnutých čislic
 }
 
-int trenink(float ***vaha, float **neu, float **vysledky, float **derivace, int vrstvy, int *pocty, int *cile, int **odhady) {
+int trenink(float *priklady, int pozice, float ***vaha, float **neu, float **vysledky, float **derivace, int vrstvy, int *pocty, int *cile, int **odhady) {
 	int spravne=0;
 	for (int i=1;i< vrstvy+2; ++i){
 		memset(derivace[i],0,pocty[i]*sizeof(float));
@@ -133,14 +133,16 @@ int trenink(float ***vaha, float **neu, float **vysledky, float **derivace, int 
 	//TODO tohle je tvoje parketa na paralelizaci, už se na ni těším
 	
 	for (int i=0; i<BEC; ++i){
+		//printf("%d \n",i); //debug
+		vysledky[0] = &priklady[(pozice + i) * (VSTUPU+1)];
+		//printf("po prirazeni %d\n",i); //debug
 		spravne+=bekpropagejsn(vaha, neu, vysledky, derivace, vrstvy, pocty, cile[i], odhady);
 	}
 	
 	for (int i = 0; i < vrstvy + 1; ++i) {
 		for (int j = 0; j < pocty[i] + 1; ++j) {
 			for (int k = 0; k < pocty[i + 1]; ++k) {
-				vaha[i][j][k] -= derivace[i + 1][k] * vysledky[i][j] *
-				                 RYCHLOST; // RYCHLOST jako funkce nečeho ?
+				vaha[i][j][k] -= derivace[i + 1][k] * vysledky[i][j] * RYCHLOST; // RYCHLOST jako funkce nečeho ?
 			}
 		}
 	}
@@ -222,8 +224,6 @@ int main(int argc, char **argv) {
 	int spravne;
 	int *odhady[10];
 	
-	
-
 	/* // debug
 	for (int i=59999*785+1; i< 60000*785; ++i){
 	printf("%f, ",priklady[i]);
@@ -233,7 +233,7 @@ int main(int argc, char **argv) {
 	*/
 	FILE *ven=fopen("vahy2.txt","w");
 	printf("zacatek treninku\n");
-	for (int p = 0; p < 1000; ++p) {
+	for (int p = 0; p < 50; ++p) {
 		for (int i=0;i<10;++i){
 			odhady[i]=malloc(10*sizeof(int));
 			for (int j=0;j<10;++j){
@@ -243,16 +243,17 @@ int main(int argc, char **argv) {
 		//printf("%d. kolo\n", p); //debug
 		spravne=0;
 		for (int i = 0; i < delka; i+=BEC) {
-			vysledky[0] = &priklady[i * 785];
+			//vysledky[0] = &priklady[i * (VSTUPU+1)];
 			/* //debug
-			for (int j=0; j<784;++j){
+			for (int j=0; j<VSTUPU;++j){
 			      printf("%.0f, ",vysledky[0][j]);
 			}
 			printf("\n");
 			*/
 			//vypis_vahy(ven, vaha,pocty, vrstvy); //debug
-			spravne += trenink(vaha, neu, vysledky, derivace, vrstvy, pocty, &cile[i], odhady);
-			
+			//printf("pred %d\n",i); //debug
+			spravne += trenink(priklady, i, vaha, neu, vysledky, derivace, vrstvy, pocty, &cile[i], odhady);
+			//printf("po\n"); //debug
 			//fprintf(ven,"=====================================================\n");
 		}
 		for (int v=0; v<10;++v){
