@@ -2,12 +2,16 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
 
 #define VSTUPU 784
 #define VYSTUPU 10
-#define SKLON 0.05
-#define RYCHLOST 0.1
+#define SKLON 0.005
+#define RYCHLOST 0.005
 #define DELKA_UCENI 5000
+#define BEC 16
+
 
 // za sebe mluvící různé pokusné aktivační funkce, použije se nejspíš relu
 
@@ -85,39 +89,53 @@ int iterace(float ***vaha, float **vysledky, float **neu, int vrstvy, int *pocty
 		suma += exp(neu[vrstvy + 1][i]- neu[vrstvy+1][max]); //odecitani kvuli preteceni
 	}
 	for (int i = 0; i < VYSTUPU; ++i) {
-		vysledky[vrstvy + 1][i] = exp(neu[vrstvy + 1][i] - max) / suma; //odecitani kvuli preteceni
+		vysledky[vrstvy + 1][i] = exp(neu[vrstvy + 1][i] - neu[vrstvy + 1][max]) / suma; //odecitani kvuli preteceni
+		//printf("vysledek %d neuronu: %f\n",i,vysledky[vrstvy + 1][i]); //debug
 	}
 	return max;
 }
 
-int trenink(float ***vaha, float **neu, float **vysledky, float **derivace, int vrstvy, int *pocty, int cil, int **odhady) {
+int bekpropagejsn(float ***vaha, float **neu, float **vysledky, float **derivace, int vrstvy, int *pocty, int cil, int **odhady) {
 	//printf("trenuju\n"); // debug
 	int vysledek = iterace(vaha, vysledky, neu, vrstvy, pocty);
-	//printf("%d %d\n",cil, vysledek); //debug
+	//printf("vysledky: %d %d\n",cil, vysledek); //debug
 	odhady[cil][vysledek]+=1;
 	//printf("hototvo\n"); //debug
 	//printf("po iteraci, vysledek= %d\n", vysledek); // debug
 	for (int i = 0; i < VYSTUPU; ++i) {
 		if (i != cil) {
-			derivace[vrstvy + 1][i] =
-			      vysledky[vrstvy + 1]
-			              [i]; // anebo += , připrava na přistup nekolik přikladů: jedno učeni
+			derivace[vrstvy + 1][i] += vysledky[vrstvy + 1][i]; 
+			      // anebo += , připrava na přistup nekolik přikladů: jedno učeni
 			//printf("derivace %d neuronu 3. vrstvy: %.2f\n", i, derivace[vrstvy + 1][i]); //debug
 		}
 	}
-	derivace[vrstvy + 1][cil] = vysledky[vrstvy + 1][cil] - 1 ; // taky nebo +=
+	derivace[vrstvy + 1][cil] += vysledky[vrstvy + 1][cil] - 1 ; // taky nebo +=
 	//printf("derivace %d neuronu 3. vrstvy: %.2f\n", cil, derivace[vrstvy + 1][cil]); //debug
 
 	for (int i = vrstvy; i > 0; --i) {
 		for (int j = 0; j < pocty[i]; ++j) {
-			derivace[i][j] = 0; // přesunout do nadřazené funkce ?
+			// derivace[i][j] = 0; // přesunout do nadřazené funkce ?
 			for (int k = 0; k < pocty[i + 1]; ++k) {
 				derivace[i][j] += vaha[i][j][k] * der_relu(neu[i][j]) * derivace[i + 1][k];
 			}
 			//printf("derivace %d neuronu %d vrstvy: %.4f\n", j,i, derivace[i][j]); //debug
 		}
 	}
+	return vysledek == cil; // můžeme potom sečist výsledky tréninku pro celkový počet spravne odhadnutých čislic
+}
 
+int trenink(float ***vaha, float **neu, float **vysledky, float **derivace, int vrstvy, int *pocty, int *cile, int **odhady) {
+	int spravne=0;
+	for (int i=1;i< vrstvy+2; ++i){
+		memset(derivace[i],0,pocty[i]*sizeof(float));
+	}
+	
+	//TODO tohle je tvoje parketa na paralelizaci, už se na ni těším
+	
+	for (int i=0; i<BEC; ++i){
+		spravne+=bekpropagejsn(vaha, neu, vysledky, derivace, vrstvy, pocty, cile[i], odhady);
+	}
+	
 	for (int i = 0; i < vrstvy + 1; ++i) {
 		for (int j = 0; j < pocty[i] + 1; ++j) {
 			for (int k = 0; k < pocty[i + 1]; ++k) {
@@ -126,8 +144,7 @@ int trenink(float ***vaha, float **neu, float **vysledky, float **derivace, int 
 			}
 		}
 	}
-	return vysledek == cil; // můžeme potom sečist výsledky tréninku pro celkový počet spravne
-	                        // odhadnutých čislic
+	return spravne;
 }
 
 int main(int argc, char **argv) {
@@ -151,21 +168,21 @@ int main(int argc, char **argv) {
 	float **vaha[vrstvy + 1];
 
 	printf("vahy\n"); // debug
-	srand(0);
+	srand(2);
 
 	for (int j = 0; j < vrstvy + 1; ++j) {
 		vaha[j] = malloc((pocty[j] + 1) * sizeof(float *));
 		for (int k = 0; k < pocty[j] + 1; ++k) {
 			vaha[j][k] = malloc(pocty[j + 1] * sizeof(float));
 			for (int g = 0; g < pocty[j + 1]; ++g) {
-				vaha[j][k][g] = 0.3 * (float)rand() / (float)RAND_MAX - 0.15; //
-				                   // inicializace vah mezi -1 a 1
+				vaha[j][k][g] = 0.1 * (float)rand() / (float)RAND_MAX - 0.05; //
+				                   // inicializace vah
 				// printf("%f\n",vaha[j][k][g]); //debug
 			}
 		}
 	}
-	printf("%f\n", vaha[0][0][0]); // debug
-	printf("neurony\n");           // debug
+	//printf("%f\n", vaha[0][0][0]); // debug
+	//printf("neurony\n");           // debug
 	float *neu[vrstvy + 2];        // neu[0] ale nepouživam (přehlednost ?)
 	float *vysledky[vrstvy + 2];
 	float *derivace[vrstvy + 2]; // derivace[0] taky nepouživam
@@ -181,7 +198,7 @@ int main(int argc, char **argv) {
 		      malloc(pocty[j] *
 		             sizeof(float)); // nebo der[j-1] ? nepouzivam derivaci prvni vstupni vrstvy
 	}
-	printf("%f\n", derivace[1][2]); // debug
+	//printf("%f\n", derivace[1][2]); // debug
 
 	/*
 	if (argc > i) {
@@ -216,7 +233,7 @@ int main(int argc, char **argv) {
 	*/
 	FILE *ven=fopen("vahy2.txt","w");
 	printf("zacatek treninku\n");
-	for (int p = 0; p < DELKA_UCENI; ++p) {
+	for (int p = 0; p < 1000; ++p) {
 		for (int i=0;i<10;++i){
 			odhady[i]=malloc(10*sizeof(int));
 			for (int j=0;j<10;++j){
@@ -225,7 +242,7 @@ int main(int argc, char **argv) {
 		}
 		//printf("%d. kolo\n", p); //debug
 		spravne=0;
-		for (int i = 0; i < delka; ++i) {
+		for (int i = 0; i < delka; i+=BEC) {
 			vysledky[0] = &priklady[i * 785];
 			/* //debug
 			for (int j=0; j<784;++j){
@@ -234,7 +251,7 @@ int main(int argc, char **argv) {
 			printf("\n");
 			*/
 			//vypis_vahy(ven, vaha,pocty, vrstvy); //debug
-			spravne += trenink(vaha, neu, vysledky, derivace, vrstvy, pocty, cile[i], odhady);
+			spravne += trenink(vaha, neu, vysledky, derivace, vrstvy, pocty, &cile[i], odhady);
 			
 			//fprintf(ven,"=====================================================\n");
 		}
@@ -244,7 +261,7 @@ int main(int argc, char **argv) {
 			}
 			printf("\n");
 		}
-		vypis_vahy(ven, vaha,pocty, vrstvy); //debug
+		// vypis_vahy(ven, vaha,pocty, vrstvy); //debug
 		printf("%d. kolo %d\n", p,spravne);
 	}
 	// vypis_vahy(ven, vaha,pocty, vrstvy);
@@ -257,9 +274,9 @@ int main(int argc, char **argv) {
 2. Nepouživaný nultý pointer v neu a derivace
 3. Vybrat spravnou architekturu
 4. Vybrat spravnou aktivačni funkci / vice aktivačnich funkci?
-5. Maji se upravit vahy po každém přikladu, nebo až po n-tici přikladů?
-6. Konečne by se to melo spustit
-7. Vyřešit, jestli nebude rychlost učeni na nečem zavisla.
+5. OK --- Maji se upravit vahy po každém přikladu, nebo až po n-tici přikladů? 
+6. OK --- Konečne by se to melo spustit 
+7. Vyřešit, jestli nebude rychlost učeni na nečem závislá.
 
 
 */
