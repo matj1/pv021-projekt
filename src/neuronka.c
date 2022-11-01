@@ -8,18 +8,18 @@
 #define VSTUPU 784
 #define VYSTUPU 10
 #define SKLON 0.005
-#define RYCHLOST 0.007 // když je moc velká, tak celá neuronka spadne do předpovídání jediné
-	                // kategorie
+#define RYCHLOST 0.01 // když je moc velká, tak celá neuronka spadne do předpovídání jediné
+                       // kategorie
 #define DELKA_UCENI 5000
 #define BEC 10
-#define P_VLAAKEN 10 // pořešit případ BEC!=P_VLAAKEN
+#define P_VLAAKEN 10 // TODO pořešit případ BEC!=P_VLAAKEN
 
 int vrstvy;
 int *pocsty;
-float ***vaaha;
-float ***neu;
-float ***vyysledky;
-float ***derivace;
+float ***vaaha;     // vnitřní váhy v síti
+float ***neu;       // vnitřní potenciály neuronů * beč
+float ***vyysledky; // výsledky neuronů po aplikování aktivační funkce * beč
+float ***derivace;  // derivace chyby podle jednoho příkladu * beč
 int odhady_vlaaken[P_VLAAKEN];
 int *ciile_vlaaken;
 
@@ -29,6 +29,8 @@ int rc;
 
 float *prziiklady;
 int *ciile;
+
+int celkem_neu;
 
 // za sebe mluvící různé pokusné aktivační funkce, použije se nejspíš relu
 
@@ -71,7 +73,7 @@ int iterace(float **vyysledky_jednoho, float **neu_jednoho) {
 	     ++i) { // vrstev je vrstvy +2 (posledni index je vrstvy+1), ale posledni je výstupni
 		vyysledky_jednoho[i][pocsty[i]] = 1;      // nastaveni thresholdového neuronu
 		for (int k = 0; k < pocsty[i + 1]; ++k) { // pro každý neuron vyšši vrstvy
-			neu_jednoho[i + 1][k] = 0;                  // vynulovani na začatku sumovani
+			neu_jednoho[i + 1][k] = 0;          // vynulovani na začatku sumovani
 			for (int j = 0; j < pocsty[i] + 1;
 			     ++j) { // pro každý neuron aktualni vrstvy +1 aby se počitalo i s thresholdem
 				neu_jednoho[i + 1][k] += vyysledky_jednoho[i][j] * vaaha[i][j][k];
@@ -90,24 +92,28 @@ int iterace(float **vyysledky_jednoho, float **neu_jednoho) {
 		for (int j = 0; j < pocsty[vrstvy] + 1; ++j) {
 			neu_jednoho[vrstvy + 1][i] += vyysledky_jednoho[vrstvy][j] * vaaha[vrstvy][j][i];
 		}
-		if (neu_jednoho[vrstvy + 1][i] > neu_jednoho[vrstvy + 1][max]) { // odecitani kvuli preteceni
+		if (neu_jednoho[vrstvy + 1][i] >
+		    neu_jednoho[vrstvy + 1][max]) { // odecitani kvuli preteceni
 			max = i;
 		}
 	}
 
 	float suma = 0;
 	for (int i = 0; i < VYSTUPU; ++i) {
-		suma += exp(neu_jednoho[vrstvy + 1][i] - neu_jednoho[vrstvy + 1][max]); // odecitani kvuli preteceni
+		suma += exp(neu_jednoho[vrstvy + 1][i] -
+		            neu_jednoho[vrstvy + 1][max]); // odecitani kvuli preteceni
 	}
 	for (int i = 0; i < VYSTUPU; ++i) {
-		vyysledky_jednoho[vrstvy + 1][i] = exp(neu_jednoho[vrstvy + 1][i] - neu_jednoho[vrstvy + 1][max]) /
-		                                   suma; // odecitani kvuli preteceni
+		vyysledky_jednoho[vrstvy + 1][i] =
+		      exp(neu_jednoho[vrstvy + 1][i] - neu_jednoho[vrstvy + 1][max]) /
+		      suma; // odecitani kvuli preteceni
 	}
 	return max;
 }
 
-void bekpropagejsn(float **vyysledky_jednoho, float **derivace_jednoho, float **neu_jednoho, int ciil, int *odhad) {
-	int vyysledek = iterace(vyysledky_jednoho,neu_jednoho);
+void bekpropagejsn(float **vyysledky_jednoho, float **derivace_jednoho, float **neu_jednoho,
+                   int ciil, int *odhad) {
+	int vyysledek = iterace(vyysledky_jednoho, neu_jednoho);
 	*odhad = vyysledek;
 	for (int i = 0; i < VYSTUPU; ++i) {
 		if (i != ciil) {
@@ -119,8 +125,8 @@ void bekpropagejsn(float **vyysledky_jednoho, float **derivace_jednoho, float **
 		for (int j = 0; j < pocsty[i]; ++j) {
 			derivace_jednoho[i][j] = 0;
 			for (int k = 0; k < pocsty[i + 1]; ++k) {
-				derivace_jednoho[i][j] +=
-				      vaaha[i][j][k] * der_relu(neu_jednoho[i][j]) * derivace_jednoho[i + 1][k];
+				derivace_jednoho[i][j] += vaaha[i][j][k] * der_relu(neu_jednoho[i][j]) *
+				                          derivace_jednoho[i + 1][k];
 			}
 		}
 	}
@@ -128,7 +134,48 @@ void bekpropagejsn(float **vyysledky_jednoho, float **derivace_jednoho, float **
 }
 
 void *jedno_vlaakno_bekpropagejsn(void *i) {
-	bekpropagejsn(vyysledky[*((int *)i)], derivace[*((int *)i)], neu[*((int *)i)], ciile_vlaaken[*((int *)i)], &odhady_vlaaken[*((int *)i)]);
+	bekpropagejsn(vyysledky[*((int *)i)], derivace[*((int *)i)], neu[*((int *)i)],
+	              ciile_vlaaken[*((int *)i)], &odhady_vlaaken[*((int *)i)]);
+	return NULL;
+}
+
+void *jedno_vlaakno_validuj(void *i){
+	odhady_vlaaken[*((int *)i)]=iterace(vyysledky[*((int *)i)],neu[*((int *)i)]); //TODO pořešit případ BEC!=P_VLAAKEN
+	return NULL;
+}
+
+void *jedno_vlaakno_vaahy(void *v) {
+	// for (int i = 0; i < BEC; ++i) {
+	
+	int vrstva = 1;
+	int kde = *((int *)v);
+	int muuzu = 1;
+	// printf("%d. vlákno, neuron %d, %d\n",*((int *)v), vrstva, kde); //debug
+		
+	while ((muuzu = vrstva < vrstvy + 2) && kde > pocsty[vrstva]) {
+		//printf("%d. vlákno, neuron %d, %d\n",*((int *)v), vrstva, kde); //debug
+		kde -= pocsty[vrstva];
+		++vrstva;
+	}
+	//printf("%d. vlákno, můzu: %d, neuron %d, %d\n",*((int *)v),muuzu, vrstva, kde); //debug
+		
+	
+	while (muuzu) {
+		//printf("%d. vlákno, neuron %d, %d\n",*((int *)v), vrstva, kde); //debug
+		for (int i = 0; i < pocsty[vrstva - 1] + 1; ++i) {
+		
+			for (int k = 0; k < BEC; ++k) {
+				vaaha[vrstva - 1][i][kde] -= derivace[k][vrstva][kde] *
+				                             vyysledky[k][vrstva - 1][i] *
+				                             RYCHLOST; // RYCHLOST jako funkce nečeho ?
+			}
+		}
+		kde += P_VLAAKEN;
+		while ((muuzu = vrstva < vrstvy + 2) && kde > pocsty[vrstva]) {
+			kde -= pocsty[vrstva];
+			++vrstva;
+		}
+	}
 	return NULL;
 }
 
@@ -144,27 +191,26 @@ int trenink(int pozice, int **odhady) {
 		rc = pthread_create(&threads[i], NULL, jedno_vlaakno_bekpropagejsn,
 		                    (void *)&thread_args[i]);
 	}
-	for (int i=0; i<P_VLAAKEN; ++i) {
-    		rc = pthread_join(threads[i], NULL);
-  	}
+	for (int i = 0; i < P_VLAAKEN; ++i) {
+		rc = pthread_join(threads[i], NULL);
+	}
 	for (int i = 0; i < P_VLAAKEN; ++i) {
 		spraavnje += odhady_vlaaken[i] == ciile_vlaaken[i];
-		odhady[ciile_vlaaken[i]][odhady_vlaaken[i]]+=1;
+		odhady[ciile_vlaaken[i]][odhady_vlaaken[i]] += 1;
 	}
 	// změna vah
-	for (int i = 0; i < BEC; ++i) {
-		// printf("%d beč\n",i);
-		for (int j = 0; j < vrstvy + 1; ++j) {
-			for (int l = 0; l < pocsty[j + 1]; ++l) {
-				for (int k = 0; k < pocsty[j] + 1; ++k) {
-					vaaha[j][k][l] -= derivace[i][j + 1][l] * vyysledky[i][j][k] *
-					                  RYCHLOST; // RYCHLOST jako funkce nečeho ?
-				}
-			}
-		}
+	for (int i = 0; i < P_VLAAKEN; ++i) {
+		thread_args[i] = i;
+		rc = pthread_create(&threads[i], NULL, jedno_vlaakno_vaahy,(void *)&thread_args[i]);
+
+	}
+	for (int i = 0; i < P_VLAAKEN; ++i) {
+		rc = pthread_join(threads[i], NULL);
 	}
 	return spraavnje;
 }
+
+
 
 int main(int argc, char **argv) {
 
@@ -175,12 +221,14 @@ int main(int argc, char **argv) {
 	pocsty = malloc((vrstvy + 2) * sizeof(int));
 	pocsty[0] = VSTUPU;
 	pocsty[vrstvy + 1] = VYSTUPU;
+	celkem_neu = VYSTUPU;
 	printf("%d\n", pocsty[0]);
 	for (int i = 1; i <= vrstvy; ++i) {
 		pocsty[i] = atoi(argv[i + 1]); // uzivatel zada pocsty skrytych neuronu jako
 		                               // dalsi argumenty main (tolik cisel, kolik
 		                               // deklaroval, ze bude zadavat)
 		printf("%d\n", pocsty[i]);
+		celkem_neu += pocsty[i];
 	}
 	printf("%d\n", pocsty[vrstvy + 1]);
 	vaaha = malloc((vrstvy + 1) * sizeof(float **));
@@ -196,7 +244,7 @@ int main(int argc, char **argv) {
 			}
 		}
 	}
-	neu=malloc(BEC*sizeof(float **));
+	neu = malloc(BEC * sizeof(float **));
 	vyysledky = malloc((BEC) * sizeof(float **));
 	derivace = malloc((BEC) * sizeof(float **));
 
@@ -211,10 +259,10 @@ int main(int argc, char **argv) {
 
 	for (int k = 0; k < BEC; ++k) {
 		derivace[k] = malloc((vrstvy + 2) * sizeof(float *));
-		neu[k]=malloc((vrstvy+2)*sizeof(float *));
+		neu[k] = malloc((vrstvy + 2) * sizeof(float *));
 		for (int i = 1; i < vrstvy + 2; ++i) {
 			derivace[k][i] = malloc(pocsty[i] * sizeof(float));
-			neu[k][i] = malloc(pocsty[i] *sizeof(float));
+			neu[k][i] = malloc(pocsty[i] * sizeof(float));
 		}
 	}
 	// načteni dat a trénink
@@ -246,15 +294,17 @@ int main(int argc, char **argv) {
 	for (int i = 0; i < 10; ++i) {
 		odhady[i] = malloc(10 * sizeof(int));
 	}
-
-	for (int p = 0; p < 50; ++p) {
+	time_t seconds;
+    	
+	for (int p = 0; p < 10; ++p) {
+		seconds = time(NULL);
 		for (int i = 0; i < 10; ++i) {
 			memset(odhady[i], 0, 10 * sizeof(int));
 		}
 
 		spraavnje = 0;
-		for (int i = 0; i < deelka - BEC + 1; i += BEC) {
-			spraavnje += trenink(i, odhady); //to největší počítání
+		for (int i = 0; i < deelka - BEC + 1; i += BEC) { //deelka - BEC + 1
+			spraavnje += trenink(i, odhady); // to největší počítání
 		}
 
 		for (int v = 0; v < 10; ++v) { // confusion matrix
@@ -263,20 +313,32 @@ int main(int argc, char **argv) {
 			}
 			printf("\n");
 		}
-		printf("%d. kolo %d\n", p, spraavnje);
+		printf("%d. kolo %d, %ld sekund\n", p, spraavnje,time(NULL)-seconds);
 
 		printf("validace\n");
 		spraavnje = 0;
-
+		seconds = time(NULL);
 		for (int i = 0; i < 10; ++i) {
 			memset(odhady[i], 0, 10 * sizeof(int));
 		}
 		int vyysledek;
-		for (int i = 0; i < val_deelka; ++i) {
-			vyysledky[0][0] = &val_prziikady[i * (VSTUPU + 1)];
-			vyysledek = iterace(vyysledky[0],neu[0]);
-			spraavnje += val_ciile[i] == vyysledek;
-			odhady[val_ciile[i]][vyysledek] += 1;
+		for (int i = 0; i < val_deelka-P_VLAAKEN+1; i+=P_VLAAKEN) {
+			for (int j=0; j<P_VLAAKEN; ++j){
+				vyysledky[j][0] = &val_prziikady[(i+j) * (VSTUPU + 1)];
+				thread_args[j] = j;
+				rc = pthread_create(&threads[j], NULL, jedno_vlaakno_validuj,
+		                    (void *)&thread_args[j]);
+			}
+			//printf("%d pred sjednocenim\n",i);
+			for (int j = 0; j < P_VLAAKEN; ++j) {
+				rc = pthread_join(threads[j], NULL);
+			}
+			//printf("%d po sjednoceni\n",i);
+			for (int j = 0; j < P_VLAAKEN; ++j) {
+				spraavnje += val_ciile[i+j] == odhady_vlaaken[j];
+				odhady[val_ciile[i+j]][odhady_vlaaken[j]] += 1;
+			}
+			//printf("po matici\n");
 		}
 
 		for (int v = 0; v < 10; ++v) { // confusion matrix
@@ -285,7 +347,9 @@ int main(int argc, char **argv) {
 			}
 			printf("\n");
 		}
-		printf("validace po %d. kole %d\n", p, spraavnje);
+		
+		
+		printf("validace po %d. kole %d, %ld sekund\n", p, spraavnje,time(NULL)-seconds);
 	}
 	vypis_vahy(ven, vaaha, pocsty, vrstvy);
 	free(prziiklady);

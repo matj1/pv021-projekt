@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <time.h>
 
 #define VSTUPU 784
 #define VYSTUPU 10
@@ -205,11 +205,13 @@ int main(int argc, char **argv) {
 
 	FILE *ven=fopen("vahy2.txt","w");
 	printf("zacatek treninku\n");
+	time_t seconds;
 	for (int i=0;i<10;++i){
 		odhady[i]=malloc(10*sizeof(int));
 	}
 
 	for (int p = 0; p < 50; ++p) {
+		seconds = time(NULL);
 		for (int i=0;i<10;++i){
 			memset(odhady[i],0,10*sizeof(int));
 		}
@@ -218,18 +220,19 @@ int main(int argc, char **argv) {
 		for (int i = 0; i < deelka -BEC +1; i+=BEC) {
 			spraavnje += trenink(prziikady, i, vaaha, neu, vyysledky, derivace, vrstvy, pocsty, ciile, odhady);
 		}
-
+		
+		
 		for (int v=0; v<10;++v){ //confusion matrix
 			for (int w=0; w<10;++w){
 				printf("%8d",odhady[v][w]);
 			}
 			printf("\n");
 		}
-		printf("%d. kolo %d\n", p,spraavnje);
+		printf("%d. kolo %d, %ld sekund\n", p,spraavnje,time(NULL)-seconds);
 
 		printf("validace\n");
 		spraavnje=0;
-
+		seconds = time(NULL);
 		for (int i=0;i<10;++i){
 			memset(odhady[i],0,10*sizeof(int));
 		}
@@ -247,7 +250,7 @@ int main(int argc, char **argv) {
 			}
 			printf("\n");
 		}
-		printf("validace po %d. kole %d\n", p,spraavnje);
+		printf("validace po %d. kole %d, %ld sekund\n", p,spraavnje,time(NULL)-seconds);
 	}
 	vypis_vahy(ven, vaaha,pocsty, vrstvy);
 	free(prziikady);
